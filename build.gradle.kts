@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     // Spring Boot Starters
+    implementation("org.springframework.boot:spring-boot-starter-aop")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
@@ -50,6 +51,9 @@ dependencies {
     implementation(platform("software.amazon.awssdk:bom:2.25.67"))
     implementation("software.amazon.awssdk:s3")
     implementation("software.amazon.awssdk:mediaconvert")
+
+    // Dotenv
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
 
     // NanoId
     implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
