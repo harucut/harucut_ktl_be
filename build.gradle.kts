@@ -5,6 +5,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
     kotlin("plugin.allopen") version "1.9.25"
+    jacoco
 }
 
 group = "com"
@@ -69,6 +70,7 @@ dependencies {
 kotlin {
     compilerOptions {
         freeCompilerArgs.addAll("-Xjsr305=strict")
+        javaParameters = true
     }
 }
 
@@ -76,6 +78,55 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+}
+
+// ────────────── JaCoCo ──────────────
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+val jacocoExcludePatterns = listOf(
+    "**/entity/**",        // JPA 엔티티 / MappedSuperclass
+    "**/repository/**",    // Spring Data 인터페이스
+    "**/config/**",        // Spring 설정 클래스
+    "**/*Application*",    // 진입점
+)
+
+tasks.test {
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(jacocoExcludePatterns)
+        }
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    classDirectories.setFrom(
+        sourceSets.main.get().output.asFileTree.matching {
+            exclude(jacocoExcludePatterns)
+        }
+    )
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.70".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
 }
 
 tasks.withType<Test> {
