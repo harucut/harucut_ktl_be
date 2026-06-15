@@ -1,0 +1,36 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+  sql:
+    init:
+      mode: never
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  mail:
+    username: test@test.com
+    password: testpassword
+
+aws:
+  credentials:
+    access-key: test-access-key
+    secret-key: test-secret-key
+  s3:
+    bucket-name: test-bucket
+    bucket-url: https://test.s3.ap-northeast-2.amazonaws.com/
+    region: ap-northeast-2
+  mediaconvert:
+    role-arn: arn:aws:iam::123456789:role/test
+    template-name: test-template
+    endpoint: https://mediaconvert.ap-northeast-2.amazonaws.com
