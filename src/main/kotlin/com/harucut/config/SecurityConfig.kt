@@ -32,7 +32,13 @@ class SecurityConfig(
 
     companion object {
         val PUBLIC_PATHS = arrayOf(
-            "/api/harucut/**",
+            "/api/harucut/register",
+            "/api/harucut/login",
+            "/api/harucut/reissue",
+            "/api/harucut/logout",
+            "/api/harucut/reset/password/code",
+            "/api/harucut/reset/password",
+            "/api/harucut/reset/password/verification",
             "/api/email-auth/**",
             "/swagger-ui/**",
             "/v3/api-docs/**"

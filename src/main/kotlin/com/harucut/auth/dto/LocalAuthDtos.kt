@@ -23,3 +23,15 @@ data class LoginResult(
     val cookies: AuthTokenCookies,
     val userStatus: UserStatus
 )
+
+data class LocalResetPasswordRequest(
+    @field:NotBlank val resetToken: String,
+    @field:NotBlank @field:Size(min = 8, max = 20) val newPassword: String
+)
+
+data class LocalChangePasswordRequest(
+    @field:NotBlank val oldPassword: String,
+    @field:NotBlank @field:Size(min = 8, max = 20) val newPassword: String
+)
+
+data class PasswordResetTokenResponse(val resetToken: String)

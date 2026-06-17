@@ -15,8 +15,11 @@ class EmailVerificationServiceImpl(
 ) : EmailVerificationService {
 
     companion object {
-        private const val VERIFICATION_SUBJECT = "[Harucut] 이메일 인증 코드입니다."
+        private const val VERIFICATION_SUBJECT = "[Harucut] 회원가입 이메일 인증 코드입니다."
         private const val VERIFICATION_TEMPLATE = "verification-code"
+
+        private const val PASSWORD_RESET_SUBJECT = "[Harucut] 비밀번호 재설정 인증 코드입니다."
+        private const val PASSWORD_RESET_TEMPLATE = "password-reset-code"
     }
 
     override fun sendVerificationCode(email: String) {
@@ -40,5 +43,15 @@ class EmailVerificationServiceImpl(
 
     override fun consumeVerified(email: String): Boolean {
         return repository.consumeVerified(email)
+    }
+
+    override fun sendPasswordResetCode(email: String) {
+        val code = generator.generate()
+        repository.saveResetCode(email, code)
+
+        val context = Context().apply { setVariable("code", code) }
+        val html = templateEngine.process(PASSWORD_RESET_TEMPLATE, context)
+
+        mailService.sendEmail(email, PASSWORD_RESET_SUBJECT, html, isHtml = true)
     }
 }
