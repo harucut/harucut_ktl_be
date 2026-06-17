@@ -7,5 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface UserRepository : JpaRepository<User, Long> {
 
     fun findByProviderAndProviderId(provider: Provider, providerId: String): User?
+
     fun findByEmail(email: String): User?
+
+    fun findByProviderAndEmail(provider: Provider, email: String): User?
+
+    fun existsByProviderAndEmail(provider: Provider, email: String): Boolean
+
+    fun findByPublicId(publicId: String): User?
 }
