@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import java.time.Duration
 
 @Component
-class JwtCookieManager(
+class CookieManager(
     @Value("\${cookie.domain}") private val domain: String,
     @Value("\${cookie.secure:true}") private val secure: Boolean
 ) {

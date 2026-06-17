@@ -12,7 +12,11 @@ import org.springframework.security.web.SecurityFilterChain
 class SecurityConfig {
 
     companion object {
-        private val PUBLIC_PATHS = arrayOf(
+        val PUBLIC_PATHS = arrayOf(
+            "/api/harucut/login",
+            "/api/harucut/register",
+            "/api/harucut/reissue",
+            "/api/harucut/logout",
             "/api/email-auth/**",
             "/swagger-ui/**",
             "/v3/api-docs/**"
