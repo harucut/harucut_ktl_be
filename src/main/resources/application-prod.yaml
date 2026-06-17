@@ -73,7 +73,11 @@ spring:
             enable: true
 
 jwt:
-  secret-key: ${JWT_SECRET_KEY}
+  secret: ${JWT_SECRET_KEY}
+
+cookie:
+  domain: ${COOKIE_DOMAIN}
+  secure: true
 
 cloud:
   aws:

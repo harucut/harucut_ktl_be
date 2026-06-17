@@ -2,6 +2,9 @@ package com.harucut.auth.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.harucut.auth.exception.AuthErrorCode
+import com.harucut.auth.jwt.service.JwtTokenService
+import com.harucut.auth.local.service.CustomUserDetailsService
+import com.harucut.auth.security.CustomAuthenticationEntryPoint
 import com.harucut.config.SecurityConfig
 import com.harucut.exception.BusinessException
 import com.harucut.util.mail.service.EmailVerificationService
@@ -28,6 +31,15 @@ class AuthEmailControllerTest {
 
     @Autowired
     lateinit var objectMapper: ObjectMapper
+
+    @MockkBean
+    lateinit var customUserDetailsService: CustomUserDetailsService
+
+    @MockkBean
+    lateinit var jwtTokenService: JwtTokenService
+
+    @MockkBean
+    lateinit var customAuthenticationEntryPoint: CustomAuthenticationEntryPoint
 
     @MockkBean
     lateinit var emailVerificationService: EmailVerificationService
@@ -152,6 +164,19 @@ class AuthEmailControllerTest {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(
                     mapOf("email" to "test@harucut.com", "code" to "")
+                )
+            }.andExpect {
+                status { isBadRequest() }
+            }
+        }
+
+        @Test
+        @DisplayName("이메일이 빈 값이면 400을 반환한다")
+        fun blankEmail() {
+            mockMvc.post("/api/email-auth/verification") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(
+                    mapOf("email" to "", "code" to "ABC123")
                 )
             }.andExpect {
                 status { isBadRequest() }
