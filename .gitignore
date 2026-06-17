@@ -45,6 +45,11 @@ out/
 ### Local properties ###
 local.properties
 
+### Environment variables ###
+.env
+.env.staging
+.env.prod
+
 ### OS ###
 .DS_Store
 Thumbs.db

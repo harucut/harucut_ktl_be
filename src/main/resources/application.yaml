@@ -1,3 +1,22 @@
+# 공통 설정
 spring:
   application:
     name: harucut
+  profiles:
+    default: local
+
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: Asia/Seoul
+
+jwt:
+  access-token-expiry: 1800000       # 30분 (ms)
+  refresh-token-expiry: 1209600000   # 14일 (ms)
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: alpha
+    disable-swagger-default-url: true
