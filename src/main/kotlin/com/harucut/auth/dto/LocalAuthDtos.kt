@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size
 data class LocalRegisterRequest(
     @field:NotBlank @field:Email val email: String,
     @field:NotBlank val username: String,
-    @field:NotBlank @field:Size(min = 8) val password: String
+    @field:NotBlank @field:Size(min = 8, max = 20) val password: String
 )
 
 data class LocalLoginRequest(
