@@ -64,6 +64,7 @@ class RefreshTokenServiceTest {
 
             // then
             assertThat(result).isInstanceOf(AuthTokenCookies::class.java)
+            verify { valueOps.set("REFRESH_TOKEN:USER:$publicId", any(), any<Duration>()) }
         }
 
         @Test
@@ -89,6 +90,8 @@ class RefreshTokenServiceTest {
             // when & then
             assertThatThrownBy { service.reissue("my-token") }
                 .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.INVALID_TOKEN)
         }
 
         @Test
@@ -101,6 +104,8 @@ class RefreshTokenServiceTest {
             // when & then
             assertThatThrownBy { service.reissue("refresh-token") }
                 .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.INVALID_TOKEN)
         }
 
         @Test
@@ -113,6 +118,8 @@ class RefreshTokenServiceTest {
             // when & then
             assertThatThrownBy { service.reissue("invalid-token") }
                 .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.INVALID_TOKEN)
         }
     }
 

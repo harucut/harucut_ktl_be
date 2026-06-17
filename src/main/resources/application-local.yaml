@@ -70,7 +70,11 @@ spring:
             enable: false
 
 jwt:
-  secret-key: local-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
+  secret: local-dev-secret-key-must-be-at-least-256-bits-long-for-hs256
+
+cookie:
+  domain: localhost
+  secure: false
 
 cloud:
   aws:

@@ -12,6 +12,7 @@ import org.springframework.web.HttpMediaTypeNotAcceptableException
 import org.springframework.web.HttpMediaTypeNotSupportedException
 import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingRequestCookieException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -129,6 +130,15 @@ class GlobalExceptionHandler {
     fun handleNoResourceFoundException(ex: NoResourceFoundException): ResponseEntity<Response<Unit>> {
         log.warn("[NoResourceFoundException] 요청한 경로를 찾을 수 없음 (404) - 요청 경로: {}", ex.resourcePath)
         return Response.errorResponse<Unit>(GlobalErrorCode.NOT_FOUND).toResponseEntity()
+    }
+
+    /**
+     * 필수 쿠키(@CookieValue) 누락 시 발생
+     */
+    @ExceptionHandler(MissingRequestCookieException::class)
+    fun handleMissingRequestCookieException(ex: MissingRequestCookieException): ResponseEntity<Response<Unit>> {
+        log.warn("[MissingRequestCookieException] 필수 쿠키 누락 - 쿠키명: {}", ex.cookieName)
+        return Response.errorResponse<Unit>(GlobalErrorCode.MISSING_PARAMETER).toResponseEntity()
     }
 
     /**
