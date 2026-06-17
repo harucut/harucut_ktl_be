@@ -28,7 +28,7 @@ class AuthEmailController(
     @PostMapping("/verification")
     fun verifyCode(@RequestBody @Valid request: EmailCodeVerifyRequest): ResponseEntity<Response<Unit>> {
         if (!emailVerificationService.verifyCode(request.email, request.code)) {
-            throw BusinessException(AuthErrorCode.EMAIL_AUTH_FAILED)
+            throw BusinessException(AuthErrorCode.EMAIL_VERIFICATION_FAILED)
         }
         return Response.ok().toResponseEntity()
     }

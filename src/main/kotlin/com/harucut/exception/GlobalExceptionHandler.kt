@@ -74,7 +74,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException::class)
     fun handleMissingServletRequestParameterException(ex: MissingServletRequestParameterException): ResponseEntity<Response<Unit>> {
         log.warn("[MissingServletRequestParameterException] 필수 파라미터 누락 - 파라미터명: {}, 파라미터 타입: {}", ex.parameterName, ex.parameterType)
-        return Response.errorResponse<Unit>(GlobalErrorCode.MISSING_REQUEST_PARAMETER).toResponseEntity()
+        return Response.errorResponse<Unit>(GlobalErrorCode.MISSING_PARAMETER).toResponseEntity()
     }
 
     /**
