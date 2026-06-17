@@ -63,8 +63,11 @@ spring:
     host: ${MAIL_HOST:localhost}
     port: ${MAIL_PORT:1025}
     properties:
-      mail.smtp.auth: false
-      mail.smtp.starttls.enable: false
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
 
 jwt:
   secret-key: local-dev-secret-key-must-be-at-least-256-bits-long-for-hs256

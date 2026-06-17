@@ -14,26 +14,8 @@ services:
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      REDIS_HOST: redis
-      MAIL_HOST: mailhog
-    env_file:
-      - .env
-    depends_on:
-      redis:
-        condition: service_healthy
-      mailhog:
-        condition: service_started
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   redis_data:
