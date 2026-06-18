@@ -3,6 +3,7 @@ package com.harucut.auth.local.service
 import com.harucut.auth.exception.AuthErrorCode
 import com.harucut.auth.exception.CustomAuthenticationException
 import com.harucut.auth.security.CustomUserPrincipal
+import com.harucut.auth.security.service.CustomUserDetailsService
 import com.harucut.user.entity.User
 import com.harucut.user.enums.Provider
 import com.harucut.user.enums.UserRole

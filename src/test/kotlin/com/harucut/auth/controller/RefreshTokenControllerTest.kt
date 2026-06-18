@@ -3,14 +3,12 @@ package com.harucut.auth.controller
 import com.harucut.auth.exception.AuthErrorCode
 import com.harucut.auth.jwt.dto.AuthTokenCookies
 import com.harucut.auth.jwt.dto.JwtClaims
-import com.harucut.auth.jwt.service.JwtTokenService
 import com.harucut.auth.jwt.service.RefreshTokenService
 import com.harucut.auth.jwt.util.CookieManager
-import com.harucut.auth.local.service.CustomUserDetailsService
-import com.harucut.auth.security.CustomAuthenticationEntryPoint
 import com.harucut.auth.security.CustomUserPrincipal
 import com.harucut.config.SecurityConfig
 import com.harucut.exception.BusinessException
+import com.harucut.support.SecurityBeansMockSupport
 import com.harucut.user.entity.User
 import com.harucut.user.enums.Provider
 import com.harucut.user.enums.UserRole
@@ -38,7 +36,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers
 
 @WebMvcTest(RefreshTokenController::class)
 @Import(SecurityConfig::class)
-class RefreshTokenControllerTest {
+class RefreshTokenControllerTest : SecurityBeansMockSupport() {
 
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -47,16 +45,7 @@ class RefreshTokenControllerTest {
     lateinit var refreshTokenService: RefreshTokenService
 
     @MockkBean
-    lateinit var jwtTokenService: JwtTokenService
-
-    @MockkBean
     lateinit var cookieManager: CookieManager
-
-    @MockkBean
-    lateinit var customUserDetailsService: CustomUserDetailsService
-
-    @MockkBean
-    lateinit var customAuthenticationEntryPoint: CustomAuthenticationEntryPoint
 
     private fun mockCookie(name: String) =
         ResponseCookie.from(name, "value").build()

@@ -5,14 +5,12 @@ import com.harucut.auth.dto.LoginResult
 import com.harucut.auth.dto.PasswordResetTokenResponse
 import com.harucut.auth.exception.AuthErrorCode
 import com.harucut.auth.jwt.dto.AuthTokenCookies
-import com.harucut.auth.jwt.service.JwtTokenService
-import com.harucut.auth.local.service.CustomUserDetailsService
 import com.harucut.auth.local.service.LocalLoginService
 import com.harucut.auth.local.service.LocalRegisterService
 import com.harucut.auth.local.service.PasswordService
-import com.harucut.auth.security.CustomAuthenticationEntryPoint
 import com.harucut.auth.security.CustomUserPrincipal
 import com.harucut.config.SecurityConfig
+import com.harucut.support.SecurityBeansMockSupport
 import com.harucut.exception.BusinessException
 import com.harucut.user.entity.User
 import com.harucut.user.enums.UserRole
@@ -37,7 +35,7 @@ import org.springframework.test.web.servlet.post
 
 @WebMvcTest(LocalAuthController::class)
 @Import(SecurityConfig::class)
-class LocalAuthControllerTest {
+class LocalAuthControllerTest : SecurityBeansMockSupport() {
 
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -53,15 +51,6 @@ class LocalAuthControllerTest {
 
     @MockkBean
     lateinit var passwordService: PasswordService
-
-    @MockkBean
-    lateinit var customUserDetailsService: CustomUserDetailsService
-
-    @MockkBean
-    lateinit var jwtTokenService: JwtTokenService
-
-    @MockkBean
-    lateinit var customAuthenticationEntryPoint: CustomAuthenticationEntryPoint
 
     @Nested
     @DisplayName("POST /api/harucut/register")
