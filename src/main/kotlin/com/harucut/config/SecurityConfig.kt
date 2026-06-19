@@ -49,6 +49,7 @@ class SecurityConfig(
             "/api/email-auth/**",
             "/oauth2/**",
             "/login/oauth2/**",
+            "/api/oauth2/unlink/naver",
             "/swagger-ui/**",
             "/v3/api-docs/**"
         )

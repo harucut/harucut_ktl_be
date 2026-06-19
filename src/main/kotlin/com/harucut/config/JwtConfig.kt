@@ -1,4 +1,4 @@
-package com.harucut.auth.jwt.config
+package com.harucut.config
 
 import com.harucut.auth.jwt.property.JwtProperties
 import com.harucut.auth.jwt.service.JwtTokenService
