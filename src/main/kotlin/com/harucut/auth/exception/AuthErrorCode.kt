@@ -16,6 +16,7 @@ enum class AuthErrorCode(
     EMAIL_REGISTRATION_FAILED("AUTH-004", HttpStatus.BAD_REQUEST, "Failed to register email."),
     DELETED_REQUEST_USER("AUTH-005", HttpStatus.BAD_REQUEST, "This account is pending deletion."),
     DELETED_USER("AUTH-006", HttpStatus.BAD_REQUEST, "This account has been permanently deleted."),
+    NOT_DELETION_TARGET("AUTH-007", HttpStatus.BAD_REQUEST, "This account is not a deletion target."),
 
     // 401 Unauthorized
     AUTHENTICATION_FAILED("AUTH-010", HttpStatus.UNAUTHORIZED, "Authentication failed."),
