@@ -29,7 +29,8 @@ class OpenApiConfig {
             .info(apiInfo())
             .servers(
                 listOf(
-                    Server().url("https://api.harucut.com").description("배포 서버"),
+                    Server().url("https://api.harucut.com").description("운영(prod)"),
+                    Server().url("https://dev.harucut.com").description("스테이징(staging)"),
                     Server().url("http://localhost:8080").description("로컬 개발")
                 )
             )
