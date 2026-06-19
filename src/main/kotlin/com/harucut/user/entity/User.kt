@@ -56,4 +56,34 @@ class User(
     fun changePassword(encodedPassword: String) {
         this.password = encodedPassword
     }
+
+    fun deleteRequested() {
+        this.userStatus = UserStatus.DELETED_REQUESTED
+        this.deleteRequestedAt = LocalDateTime.now()
+    }
+
+    fun reActivate() {
+        this.userStatus = UserStatus.ACTIVE
+        this.deleteRequestedAt = null
+    }
+
+    fun delete() {
+        this.userStatus = UserStatus.DELETED
+        this.email = "deleted_${id}@harucut.local"
+        this.username = "탈퇴한 사용자"
+        this.password = null
+        this.profileImageUrl = DEFAULT_PROFILE_IMAGE
+        this.providerId = null
+    }
+
+    fun isReadyForDeletion(now: LocalDateTime): Boolean {
+        val requestedAt = deleteRequestedAt ?: return false
+        return userStatus == UserStatus.DELETED_REQUESTED &&
+                requestedAt.plusDays(DELETION_GRACE_DAYS).isBefore(now)
+    }
+
+    companion object {
+        const val DELETION_GRACE_DAYS = 7L
+        private const val DEFAULT_PROFILE_IMAGE = "resources/defaults/userDefaultImage.png"
+    }
 }

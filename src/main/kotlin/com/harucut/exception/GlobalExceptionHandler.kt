@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.validation.BindException
 import org.springframework.web.HttpMediaTypeNotAcceptableException
 import org.springframework.web.HttpMediaTypeNotSupportedException
@@ -139,6 +140,15 @@ class GlobalExceptionHandler {
     fun handleMissingRequestCookieException(ex: MissingRequestCookieException): ResponseEntity<Response<Unit>> {
         log.warn("[MissingRequestCookieException] 필수 쿠키 누락 - 쿠키명: {}", ex.cookieName)
         return Response.errorResponse<Unit>(GlobalErrorCode.MISSING_PARAMETER).toResponseEntity()
+    }
+
+    /**
+     * 인가 실패 (@PreAuthorize 등 메서드 시큐리티 거부)
+     */
+    @ExceptionHandler(AccessDeniedException::class)
+    fun handleAccessDeniedException(ex: AccessDeniedException): ResponseEntity<Response<Unit>> {
+        log.warn("[AccessDeniedException] 접근 권한 없음 - 메시지: {}", ex.message)
+        return Response.errorResponse<Unit>(GlobalErrorCode.FORBIDDEN).toResponseEntity()
     }
 
     /**
