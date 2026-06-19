@@ -8,7 +8,8 @@ import java.time.Duration
 @Component
 class CookieManager(
     @Value("\${cookie.domain}") private val domain: String,
-    @Value("\${cookie.secure:true}") private val secure: Boolean
+    @Value("\${cookie.secure:true}") private val secure: Boolean,
+    @Value("\${cookie.same-site:Lax}") private val sameSite: String
 ) {
 
     fun createTokenCookie(name: String, value: String, maxAgeMillis: Long): ResponseCookie =
@@ -17,7 +18,7 @@ class CookieManager(
             .secure(secure)
             .path("/")
             .maxAge(Duration.ofMillis(maxAgeMillis))
-            .sameSite("Lax")
+            .sameSite(sameSite)
             .domain(domain)
             .build()
 
@@ -27,7 +28,7 @@ class CookieManager(
             .secure(secure)
             .path("/")
             .maxAge(0)
-            .sameSite("Lax")
+            .sameSite(sameSite)
             .domain(domain)
             .build()
 }
