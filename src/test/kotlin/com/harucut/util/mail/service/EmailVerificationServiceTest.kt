@@ -165,4 +165,47 @@ class EmailVerificationServiceTest {
             assertThat(result).isFalse()
         }
     }
+
+    @Nested
+    inner class SendPasswordResetCode {
+
+        @Test
+        @DisplayName("코드 생성 → 저장 → 렌더링 → 발송 순서로 실행된다")
+        fun success() {
+            // given
+            val email = "test@harucut.com"
+            val code = "ABC123"
+
+            every { generator.generate() } returns code
+            every { repository.saveResetCode(email, code) } just Runs
+            every { templateEngine.process(any<String>(), any()) } returns "<html>$code</html>"
+            every { mailService.sendEmail(any(), any(), any(), any()) } just Runs
+
+            // when
+            service.sendPasswordResetCode(email)
+
+            // then
+            verifyOrder {
+                generator.generate()
+                repository.saveResetCode(email, code)
+                templateEngine.process(any<String>(), any())
+                mailService.sendEmail(email, any(), any(), true)
+            }
+        }
+
+        @Test
+        @DisplayName("메일 발송 실패 시 예외가 전파된다")
+        fun mailSendFailed() {
+            // given
+            every { generator.generate() } returns "ABC123"
+            every { repository.saveResetCode(any(), any()) } just Runs
+            every { templateEngine.process(any<String>(), any()) } returns "<html/>"
+            every { mailService.sendEmail(any(), any(), any(), any()) } throws
+                    BusinessException(AuthErrorCode.EMAIL_SEND_FAILED)
+
+            // when & then
+            assertThatThrownBy { service.sendPasswordResetCode("test@harucut.com") }
+                .isInstanceOf(BusinessException::class.java)
+        }
+    }
 }

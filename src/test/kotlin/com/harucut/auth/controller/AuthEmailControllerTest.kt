@@ -2,11 +2,9 @@ package com.harucut.auth.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.harucut.auth.exception.AuthErrorCode
-import com.harucut.auth.jwt.service.JwtTokenService
-import com.harucut.auth.local.service.CustomUserDetailsService
-import com.harucut.auth.security.CustomAuthenticationEntryPoint
 import com.harucut.config.SecurityConfig
 import com.harucut.exception.BusinessException
+import com.harucut.support.SecurityBeansMockSupport
 import com.harucut.util.mail.service.EmailVerificationService
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.Runs
@@ -24,22 +22,13 @@ import kotlin.test.Test
 
 @WebMvcTest(AuthEmailController::class)
 @Import(SecurityConfig::class)
-class AuthEmailControllerTest {
+class AuthEmailControllerTest : SecurityBeansMockSupport() {
 
     @Autowired
     lateinit var mockMvc: MockMvc
 
     @Autowired
     lateinit var objectMapper: ObjectMapper
-
-    @MockkBean
-    lateinit var customUserDetailsService: CustomUserDetailsService
-
-    @MockkBean
-    lateinit var jwtTokenService: JwtTokenService
-
-    @MockkBean
-    lateinit var customAuthenticationEntryPoint: CustomAuthenticationEntryPoint
 
     @MockkBean
     lateinit var emailVerificationService: EmailVerificationService

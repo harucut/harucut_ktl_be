@@ -52,4 +52,8 @@ class User(
     // ── 연관관계 편의 메서드 ──────────────────────────────
 
     // ── 상태 변경 ─────────────────────────────────────────
+
+    fun changePassword(encodedPassword: String) {
+        this.password = encodedPassword
+    }
 }

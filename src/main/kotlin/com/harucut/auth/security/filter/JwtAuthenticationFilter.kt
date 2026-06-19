@@ -2,7 +2,7 @@ package com.harucut.auth.security.filter
 
 import com.harucut.auth.exception.CustomAuthenticationException
 import com.harucut.auth.jwt.service.JwtTokenService
-import com.harucut.auth.local.service.CustomUserDetailsService
+import com.harucut.auth.security.service.CustomUserDetailsService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse

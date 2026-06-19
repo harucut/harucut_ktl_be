@@ -1,4 +1,4 @@
-package com.harucut.auth.local.service
+package com.harucut.auth.security.service
 
 import com.harucut.auth.exception.AuthErrorCode
 import com.harucut.auth.exception.CustomAuthenticationException
