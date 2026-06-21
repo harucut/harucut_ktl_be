@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class AwsProperties(
     val region: String,
     val credentials: Credentials,
-    val s3: S3
+    val s3: S3,
+    val mediaconvert: MediaConvert
 ) {
     data class Credentials(
         val accessKey: String,
@@ -15,5 +16,11 @@ data class AwsProperties(
 
     data class S3(
         val bucket: String
+    )
+
+    data class MediaConvert(
+        val endpoint: String,
+        val roleArn: String,
+        val templateName: String
     )
 }

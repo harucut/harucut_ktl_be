@@ -38,10 +38,13 @@ class UserExitServiceImpl(
 
         handlers.forEach { it.handleUserDeletion(userId) }
 
-        unlinkService.firstOrNull { it.supports(user.provider) }?.unlink(user)
+        val managedUser = userRepository.findById(userId)
+            .orElseThrow { BusinessException(AuthErrorCode.USER_NOT_FOUND) }
 
-        refreshTokenService.logout(user.publicId)
-        user.delete()
+        unlinkService.firstOrNull { it.supports(managedUser.provider) }?.unlink(managedUser)
+
+        refreshTokenService.logout(managedUser.publicId)
+        managedUser.delete()
     }
 
     @Transactional

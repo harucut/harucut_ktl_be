@@ -106,6 +106,10 @@ cloud:
       secret-key: ${AWS_SECRET_KEY:dummy-secret-key}
     s3:
       bucket: ${S3_BUCKET:harucut-local}
+    mediaconvert:
+      endpoint: ${AWS_MEDIACONVERT_ENDPOINT:https://dummy.mediaconvert.ap-northeast-2.amazonaws.com}
+      role-arn: ${AWS_MEDIACONVERT_ROLE_ARN:arn:aws:iam::000000000000:role/dummy}
+      template-name: ${AWS_MEDIACONVERT_TEMPLATE:dummy-template}
 
 springdoc:
   default-consumes-media-type: application/json
