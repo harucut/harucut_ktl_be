@@ -50,6 +50,7 @@ class SecurityConfig(
             "/oauth2/**",
             "/login/oauth2/**",
             "/api/oauth2/unlink/naver",
+            "/api/webhooks/mediaconvert",
             "/swagger-ui/**",
             "/v3/api-docs/**"
         )

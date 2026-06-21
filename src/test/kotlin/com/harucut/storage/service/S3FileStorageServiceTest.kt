@@ -48,7 +48,8 @@ class S3FileStorageServiceTest {
         val properties = AwsProperties(
             region = "ap-northeast-2",
             credentials = AwsProperties.Credentials("ak", "sk"),
-            s3 = AwsProperties.S3(BUCKET)
+            s3 = AwsProperties.S3(BUCKET),
+            mediaconvert = AwsProperties.MediaConvert("https://mc", "role-arn", "tmpl")
         )
         service = S3FileStorageService(s3Client, s3Presigner, properties, listOf(profileStrategy))
     }
