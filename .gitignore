@@ -53,6 +53,7 @@ local.properties
 ### Claude ###
 CLAUDE.md
 .claude/
+docs/
 
 ### OS ###
 .DS_Store
