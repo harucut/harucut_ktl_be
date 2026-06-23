@@ -7,8 +7,10 @@ import com.harucut.user.entity.User
 import com.harucut.user.enums.Provider
 import com.harucut.user.enums.UserRole
 import com.harucut.user.enums.UserStatus
+import com.harucut.user.event.UserRegisteredEvent
 import com.harucut.user.repository.UserRepository
 import com.harucut.util.mail.service.EmailVerificationService
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 class LocalRegisterServiceImpl(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val emailVerificationService: EmailVerificationService
+    private val emailVerificationService: EmailVerificationService,
+    private val eventPublisher: ApplicationEventPublisher
 ) : LocalRegisterService {
 
     @Transactional
@@ -30,7 +33,7 @@ class LocalRegisterServiceImpl(
             throw BusinessException(AuthErrorCode.EMAIL_REGISTRATION_FAILED)
         }
 
-        userRepository.save(
+        val user = userRepository.save(
             User(
                 provider = Provider.HARUCUT,
                 userRole = UserRole.ROLE_USER,
@@ -41,6 +44,8 @@ class LocalRegisterServiceImpl(
                 userStatus = UserStatus.ACTIVE
             )
         )
+
+        eventPublisher.publishEvent(UserRegisteredEvent(user))
     }
 
     private fun isEmailTaken(email: String): Boolean =

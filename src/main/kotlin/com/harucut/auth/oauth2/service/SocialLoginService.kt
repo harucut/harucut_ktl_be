@@ -7,7 +7,9 @@ import com.harucut.user.entity.User
 import com.harucut.user.enums.Provider
 import com.harucut.user.enums.UserRole
 import com.harucut.user.enums.UserStatus
+import com.harucut.user.event.UserRegisteredEvent
 import com.harucut.user.repository.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.user.OAuth2User
@@ -16,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class SocialLoginService(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
 
     companion object {
@@ -59,6 +62,8 @@ class SocialLoginService(
             userStatus = UserStatus.ACTIVE
         )
 
-        return userRepository.save(user)
+        val saved = userRepository.save(user)
+        eventPublisher.publishEvent(UserRegisteredEvent(saved))
+        return saved
     }
 }
