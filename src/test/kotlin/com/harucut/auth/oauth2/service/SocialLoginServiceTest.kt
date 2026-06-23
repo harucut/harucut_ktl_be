@@ -12,6 +12,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
@@ -20,7 +21,8 @@ import org.springframework.security.oauth2.core.user.OAuth2User
 class SocialLoginServiceTest {
 
     private val userRepository: UserRepository = mockk()
-    private val service = SocialLoginService(userRepository)
+    private val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
+    private val service = SocialLoginService(userRepository, eventPublisher)
 
     private fun kakaoRegistration(): ClientRegistration =
         ClientRegistration.withRegistrationId("kakao")

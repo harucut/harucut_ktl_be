@@ -14,6 +14,7 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.security.crypto.password.PasswordEncoder
 
 class LocalRegisterServiceTest {
@@ -21,7 +22,8 @@ class LocalRegisterServiceTest {
     private val userRepository: UserRepository = mockk()
     private val passwordEncoder: PasswordEncoder = mockk(relaxed = true)
     private val emailVerificationService: EmailVerificationService = mockk()
-    private val service = LocalRegisterServiceImpl(userRepository, passwordEncoder, emailVerificationService)
+    private val eventPublisher: ApplicationEventPublisher = mockk(relaxed = true)
+    private val service = LocalRegisterServiceImpl(userRepository, passwordEncoder, emailVerificationService, eventPublisher)
 
     private val request = LocalRegisterRequest(
         email = "test@harucut.com",
