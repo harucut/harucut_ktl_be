@@ -72,4 +72,41 @@ class UserSubscriptionTest {
         }
     }
 
+    @Nested
+    inner class PreviewCycle {
+
+        @Test
+        @DisplayName("사이클이 유효하면 현재 값을 그대로 담은 뷰를 반환하고 상태를 변경하지 않는다")
+        fun within() {
+            val sub = UserSubscription.createDefault(user())
+            sub.increaseVideoUploadCount()
+            val endBefore = sub.currentCycleEndAt
+
+            val view = sub.previewCycle(LocalDateTime.now())
+
+            assertThat(view.videoUploadCount).isEqualTo(1)
+            assertThat(view.end).isEqualTo(endBefore)
+            // 상태 불변
+            assertThat(sub.currentVideoUploadCount).isEqualTo(1)
+            assertThat(sub.currentCycleEndAt).isEqualTo(endBefore)
+        }
+
+        @Test
+        @DisplayName("사이클이 만료됐으면 다음 창과 사용량 0을 담은 뷰를 반환하되 상태는 변경하지 않는다")
+        fun expiredReadonly() {
+            val sub = UserSubscription.createDefault(user())
+            sub.increaseVideoUploadCount()
+            val endBefore = sub.currentCycleEndAt
+            val now = endBefore.plusDays(1)
+
+            val view = sub.previewCycle(now)
+
+            assertThat(view.videoUploadCount).isZero()
+            assertThat(view.end).isAfter(now)
+            // 상태 불변 (영속화 없음)
+            assertThat(sub.currentVideoUploadCount).isEqualTo(1)
+            assertThat(sub.currentCycleEndAt).isEqualTo(endBefore)
+        }
+    }
+
 }

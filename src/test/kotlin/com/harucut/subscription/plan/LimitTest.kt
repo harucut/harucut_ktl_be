@@ -22,4 +22,21 @@ class LimitTest {
         assertThat(Limit.Unlimited.allows(Int.MAX_VALUE)).isTrue()
         assertThat(Limit.Unlimited.isUnlimited).isTrue()
     }
+
+    @Test
+    @DisplayName("maxOrUnlimited는 Limited면 max, Unlimited면 -1을 반환한다")
+    fun maxOrUnlimited() {
+        assertThat(Limit.Limited(5).maxOrUnlimited()).isEqualTo(5)
+        assertThat(Limit.Unlimited.maxOrUnlimited()).isEqualTo(-1)
+    }
+
+    @Test
+    @DisplayName("remainingFrom은 Limited면 (max-사용량, 0 하한), Unlimited면 -1을 반환한다")
+    fun remainingFrom() {
+        val limit = Limit.Limited(5)
+        assertThat(limit.remainingFrom(2)).isEqualTo(3)
+        assertThat(limit.remainingFrom(5)).isEqualTo(0)
+        assertThat(limit.remainingFrom(7)).isEqualTo(0)
+        assertThat(Limit.Unlimited.remainingFrom(999)).isEqualTo(-1)
+    }
 }
