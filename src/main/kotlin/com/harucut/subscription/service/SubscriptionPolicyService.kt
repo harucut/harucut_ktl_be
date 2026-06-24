@@ -1,6 +1,7 @@
 package com.harucut.subscription.service
 
 import com.harucut.exception.BusinessException
+import com.harucut.frame.policy.FrameSubscriptionPolicy
 import com.harucut.media.policy.MediaSubscriptionPolicy
 import com.harucut.subscription.entity.UserSubscription
 import com.harucut.subscription.exception.SubscriptionErrorCode
@@ -15,7 +16,7 @@ import java.time.LocalDateTime
 @Service
 class SubscriptionPolicyService(
     private val userSubscriptionRepository: UserSubscriptionRepository
-) : MediaSubscriptionPolicy {
+) : MediaSubscriptionPolicy, FrameSubscriptionPolicy {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -58,4 +59,12 @@ class SubscriptionPolicyService(
                 log.warn("구독이 없어 기본 구독을 생성합니다. userId={}", user.id)
                 userSubscriptionRepository.save(UserSubscription.createDefault(user))
             }
+
+    /** 현재 보관 중인 프레임 개수가 요금제 동시 보관 cap 이내인지 검증 (초과 시 예외) */
+    override fun assertFrameRetentionLimit(user: User, currentFrameCount: Int) {
+        val limit = resolvePolicy(user).frameRetentionLimit
+        if (!limit.allows(currentFrameCount)) {
+            throw BusinessException(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+        }
+    }
 }
