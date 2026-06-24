@@ -18,5 +18,10 @@ enum class SubscriptionErrorCode(
         "SUBS-002",
         HttpStatus.FORBIDDEN,
         "Requested history is beyond the plan's retention period."
-    )
+    ),
+    PLAN_FRAME_RETENTION_EXCEEDED(
+        "SUBS-003",
+        HttpStatus.FORBIDDEN,
+        "The number of stored frames exceeds the limit for the current plan."
+    ),
 }

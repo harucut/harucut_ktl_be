@@ -167,4 +167,55 @@ class SubscriptionPolicyServiceTest {
         }
     }
 
+    @Nested
+    inner class AssertFrameRetentionLimit {
+
+        @Test
+        @DisplayName("BASIC 동시 보관 cap(1) 미만이면 통과한다")
+        fun underCap() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+
+            service.assertFrameRetentionLimit(u, 0)
+        }
+
+        @Test
+        @DisplayName("BASIC 동시 보관 cap(1)에 도달하면 PLAN_FRAME_RETENTION_EXCEEDED 예외를 던진다")
+        fun atCap() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+
+            assertThatThrownBy { service.assertFrameRetentionLimit(u, 1) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+        }
+
+        @Test
+        @DisplayName("PRO도 동시 보관 cap(10)을 초과하면 예외를 던진다")
+        fun proAtCap() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PRO)
+
+            assertThatThrownBy { service.assertFrameRetentionLimit(u, 10) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+        }
+
+        @Test
+        @DisplayName("구독이 없으면 기본 요금제 cap으로 판정하며 저장하지 않는다")
+        fun noSubscription() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns null
+
+            assertThatThrownBy { service.assertFrameRetentionLimit(u, 1) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+
+            verify(exactly = 0) { userSubscriptionRepository.save(any()) }
+        }
+    }
+
 }
