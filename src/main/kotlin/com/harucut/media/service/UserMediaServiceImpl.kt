@@ -10,6 +10,7 @@ import com.harucut.media.enums.UserMediaType
 import com.harucut.media.policy.MediaSubscriptionPolicy
 import com.harucut.media.repository.UserMediaRepository
 import com.harucut.storage.service.FileStorageService
+import com.harucut.storage.util.normalizeToS3Key
 import com.harucut.user.entity.User
 import com.harucut.user.repository.UserRepository
 import com.harucut.util.response.PageResponse
@@ -19,7 +20,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -179,22 +179,6 @@ class UserMediaServiceImpl(
     private fun resolveDisplayNameForView(media: UserMedia): String {
         if (media.displayName.isNotBlank()) return media.displayName.trim()
         return resolveDisplayName(null, media.mediaType, media.s3Key, media.originalFileName, media.createdAt)
-    }
-
-    // 입력(URL/s3:// 경로/key)을 순수 S3 key로 정규화
-    private fun normalizeToS3Key(pathOrKey: String?): String {
-        if (pathOrKey.isNullOrBlank()) {
-            throw BusinessException(GlobalErrorCode.INVALID_INPUT_VALUE, "S3 path or key must not be blank.")
-        }
-        val value = pathOrKey.trim()
-        if (value.startsWith("s3://") || value.startsWith("http://") || value.startsWith("https://")) {
-            val key = URI.create(value).path
-            if (key.isNullOrBlank() || key == "/") {
-                throw BusinessException(GlobalErrorCode.INVALID_INPUT_VALUE, "Cannot extract S3 key from the given path.")
-            }
-            return if (key.startsWith("/")) key.substring(1) else key
-        }
-        return if (value.startsWith("/")) value.substring(1) else value
     }
 
     // 표시 파일명 생성 (사용자 지정 → 원본 파일명 → harucut_타임스탬프 우선순위, 확장자는 key 기준)

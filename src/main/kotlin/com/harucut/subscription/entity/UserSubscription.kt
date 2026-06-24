@@ -52,11 +52,27 @@ class UserSubscription(
         if (now.isBefore(currentCycleEndAt)) {
             return
         }
-        while (!now.isBefore(currentCycleEndAt)) {
-            currentCycleStartAt = currentCycleEndAt
-            currentCycleEndAt = currentCycleEndAt.plusMonths(1)
+        val synced = previewCycle(now)
+        currentCycleStartAt = synced.start
+        currentCycleEndAt = synced.end
+        currentVideoUploadCount = synced.videoUploadCount
+    }
+
+    /**
+     * 현재 시각 기준 사이클 스냅샷을 계산해 반환한다(상태를 변경하지 않음).
+     * 만료된 경우 현재 시각이 포함되는 다음 창과 사용량 0을 돌려주어, 영속화 없이 표시용으로 쓸 수 있다.
+     */
+    fun previewCycle(now: LocalDateTime): CycleView {
+        if (now.isBefore(currentCycleEndAt)) {
+            return CycleView(currentCycleStartAt, currentCycleEndAt, currentVideoUploadCount)
         }
-        currentVideoUploadCount = 0
+        var start = currentCycleStartAt
+        var end = currentCycleEndAt
+        while (!now.isBefore(end)) {
+            start = end
+            end = end.plusMonths(1)
+        }
+        return CycleView(start, end, 0)
     }
 
     /** 현재 사이클의 동영상 업로드 사용 횟수를 1 증가시킨다. */

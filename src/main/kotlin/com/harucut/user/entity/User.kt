@@ -57,6 +57,16 @@ class User(
         this.password = encodedPassword
     }
 
+    // 닉네임(username) 변경
+    fun changeUsername(username: String) {
+        this.username = username
+    }
+
+    // 프로필 이미지 key/URL 변경
+    fun changeProfileImageUrl(profileImageUrl: String) {
+        this.profileImageUrl = profileImageUrl
+    }
+
     fun deleteRequested() {
         this.userStatus = UserStatus.DELETED_REQUESTED
         this.deleteRequestedAt = LocalDateTime.now()
