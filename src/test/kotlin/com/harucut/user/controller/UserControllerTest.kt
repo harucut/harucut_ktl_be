@@ -27,7 +27,6 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
-import java.time.LocalDateTime
 
 @WebMvcTest(UserController::class)
 @Import(SecurityConfig::class)
@@ -64,16 +63,10 @@ class UserControllerTest : SecurityBeansMockSupport() {
 
     private fun usage() = SubscriptionUsageResponse(
         planTier = "BASIC",
-        videoUploadMonthlyLimit = 5,
-        videoUploadUsedCount = 2,
-        videoUploadRemainingCount = 3,
-        videoUploadUnlimited = false,
         frameRetentionLimit = 1,
         frameRetentionUsedCount = 1,
         frameRetentionRemainingCount = 0,
-        frameRetentionUnlimited = false,
-        currentCycleStartAt = LocalDateTime.now().minusDays(1),
-        currentCycleEndAt = LocalDateTime.now().plusDays(29)
+        frameRetentionUnlimited = false
     )
 
     @Nested
@@ -120,7 +113,6 @@ class UserControllerTest : SecurityBeansMockSupport() {
                 with(authentication(authToken()))
             }.andExpect {
                 status { isOk() }
-                jsonPath("$.data.videoUploadMonthlyLimit") { value(5) }
                 jsonPath("$.data.frameRetentionUsedCount") { value(1) }
             }
         }

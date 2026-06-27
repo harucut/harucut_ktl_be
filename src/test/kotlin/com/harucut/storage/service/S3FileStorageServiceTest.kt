@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import software.amazon.awssdk.awscore.exception.AwsErrorDetails
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.*
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
@@ -33,7 +32,7 @@ class S3FileStorageServiceTest {
 
     private val profileStrategy = object : UploadPathStrategy {
         override val uploadType = UploadType.PROFILE
-        override fun generateKey(publicId: String, originalFilename: String, isTemp: Boolean) =
+        override fun generateKey(publicId: String, originalFilename: String) =
             "uploads/users/$publicId/profile/fixed.png"
     }
 
@@ -48,8 +47,7 @@ class S3FileStorageServiceTest {
         val properties = AwsProperties(
             region = "ap-northeast-2",
             credentials = AwsProperties.Credentials("ak", "sk"),
-            s3 = AwsProperties.S3(BUCKET),
-            mediaconvert = AwsProperties.MediaConvert("https://mc", "role-arn", "tmpl")
+            s3 = AwsProperties.S3(BUCKET)
         )
         service = S3FileStorageService(s3Client, s3Presigner, properties, listOf(profileStrategy))
     }
@@ -60,18 +58,15 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("전략이 만든 key와 검증된 contentType으로 presigned PUT URL을 발급한다")
         fun success() {
-            // given
             val presigned = mockk<PresignedPutObjectRequest>()
             every { presigned.url() } returns URI("https://x.s3/upload").toURL()
             val requestSlot = slot<PutObjectPresignRequest>()
             every { s3Presigner.presignPutObject(capture(requestSlot)) } returns presigned
 
-            // when
             val result = service.generatePresignedUploadUrl(
-                UploadType.PROFILE, "photo.png", ContentType.PNG, "pub-1", false
+                UploadType.PROFILE, "photo.png", ContentType.PNG, "pub-1"
             )
 
-            // then
             assertThat(result.key).isEqualTo("uploads/users/pub-1/profile/fixed.png")
             assertThat(result.contentType).isEqualTo("image/png")
             assertThat(result.uploadUrl).isEqualTo("https://x.s3/upload")
@@ -87,7 +82,7 @@ class S3FileStorageServiceTest {
         fun unsupportedType() {
             assertThatThrownBy {
                 service.generatePresignedUploadUrl(
-                    UploadType.FRAME, "v.webm", ContentType.WEBM, "pub-1", false
+                    UploadType.FRAME, "v.png", ContentType.PNG, "pub-1"
                 )
             }
                 .isInstanceOf(BusinessException::class.java)
@@ -100,7 +95,7 @@ class S3FileStorageServiceTest {
         fun mismatchedContentType() {
             assertThatThrownBy {
                 service.generatePresignedUploadUrl(
-                    UploadType.PROFILE, "photo.png", ContentType.JPEG, "pub-1", false
+                    UploadType.PROFILE, "photo.png", ContentType.JPEG, "pub-1"
                 )
             }
                 .isInstanceOf(BusinessException::class.java)
@@ -140,47 +135,6 @@ class S3FileStorageServiceTest {
             assertThat(slot.captured)
                 .extracting("bucket", "key")
                 .containsExactly(BUCKET, "uploads/a.png")
-        }
-    }
-
-    @Nested
-    inner class MoveFile {
-
-        @Test
-        @DisplayName("원본을 복사한 뒤 원본을 삭제하고 목적지 key를 반환한다")
-        fun success() {
-            every { s3Client.copyObject(any<CopyObjectRequest>()) } returns CopyObjectResponse.builder().build()
-            every { s3Client.deleteObject(any<DeleteObjectRequest>()) } returns DeleteObjectResponse.builder().build()
-
-            val result = service.moveFile("temp/a.png", "uploads/a.png")
-
-            assertThat(result).isEqualTo("uploads/a.png")
-            verify { s3Client.copyObject(any<CopyObjectRequest>()) }
-            verify { s3Client.deleteObject(any<DeleteObjectRequest>()) }
-        }
-
-        @Test
-        @DisplayName("source 또는 destination이 비어있으면 INVALID_INPUT_VALUE 예외를 던진다")
-        fun blankKey() {
-            assertThatThrownBy { service.moveFile("", "uploads/a.png") }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(GlobalErrorCode.INVALID_INPUT_VALUE)
-        }
-
-        @Test
-        @DisplayName("원본이 없으면(NoSuchKey) FILE_EXPIRED 예외를 던진다")
-        fun expired() {
-            val s3Exception = S3Exception.builder()
-                .statusCode(404)
-                .awsErrorDetails(AwsErrorDetails.builder().errorCode("NoSuchKey").build())
-                .build() as S3Exception
-            every { s3Client.copyObject(any<CopyObjectRequest>()) } throws s3Exception
-
-            assertThatThrownBy { service.moveFile("temp/a.png", "uploads/a.png") }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(GlobalErrorCode.FILE_EXPIRED)
         }
     }
 }

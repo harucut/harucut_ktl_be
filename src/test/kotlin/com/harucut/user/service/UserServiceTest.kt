@@ -19,7 +19,6 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
 import java.util.Optional
 
 class UserServiceTest {
@@ -34,7 +33,6 @@ class UserServiceTest {
         userRepository, userSubscriptionRepository, fileStorageService, subscriptionUsageService, planPricingProperties
     )
 
-    // 정보 조회에 필요한 필드를 갖춘 사용자 목
     private fun userMock(id: Long = 1L): User = mockk(relaxed = true) {
         every { this@mockk.id } returns id
         every { email } returns "user@harucut.com"
@@ -100,24 +98,15 @@ class UserServiceTest {
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { subscriptionUsageService.getUsage(user) } returns SubscriptionUsage(
                 planTier = PlanTier.BASIC,
-                videoUploadLimit = 5,
-                videoUploadUsed = 2,
-                videoUploadRemaining = 3,
-                videoUploadUnlimited = false,
                 frameRetentionLimit = 1,
                 frameRetentionUsed = 1,
                 frameRetentionRemaining = 0,
-                frameRetentionUnlimited = false,
-                cycleStart = LocalDateTime.now().minusDays(1),
-                cycleEnd = LocalDateTime.now().plusDays(29)
+                frameRetentionUnlimited = false
             )
 
             val res = service.getSubscriptionUsage(1L)
 
             assertThat(res.planTier).isEqualTo("BASIC")
-            assertThat(res.videoUploadMonthlyLimit).isEqualTo(5)
-            assertThat(res.videoUploadUsedCount).isEqualTo(2)
-            assertThat(res.videoUploadRemainingCount).isEqualTo(3)
             assertThat(res.frameRetentionUsedCount).isEqualTo(1)
             assertThat(res.frameRetentionRemainingCount).isEqualTo(0)
         }

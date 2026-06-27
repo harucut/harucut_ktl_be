@@ -5,22 +5,13 @@ import com.harucut.exception.GlobalErrorCode
 
 enum class ContentType(
     val mimeType: String,
-    val extensions: Set<String>,
-    val mediaType: MediaType
+    val extensions: Set<String>
 ) {
 
-    // Image
-    JPEG("image/jpeg", setOf("jpg", "jpeg"), MediaType.IMAGE),
-    PNG("image/png", setOf("png"), MediaType.IMAGE),
-    WEBP("image/webp", setOf("webp"), MediaType.IMAGE),
-    GIF("image/gif", setOf("gif"), MediaType.IMAGE),
-
-    // Video
-    MP4("video/mp4", setOf("mp4"), MediaType.VIDEO),
-    WEBM("video/webm", setOf("webm"), MediaType.VIDEO),
-    MOV("video/quicktime", setOf("mov"), MediaType.VIDEO);
-
-    enum class MediaType { IMAGE, VIDEO }
+    JPEG("image/jpeg", setOf("jpg", "jpeg")),
+    PNG("image/png", setOf("png")),
+    WEBP("image/webp", setOf("webp")),
+    GIF("image/gif", setOf("gif"));
 
     companion object {
         fun validate(mimeType: String, extension: String?): ContentType {

@@ -21,18 +21,6 @@ class UserMedia(
     @Column(name = "display_name", nullable = false, length = 255)
     var displayName: String,
 
-    @Column(name = "original_s3_key", length = 512)
-    val originalS3Key: String? = null,
-
-    @Column(name = "original_file_name", length = 255)
-    val originalFileName: String? = null,
-
-    @Column(name = "transcode_job_id", length = 128)
-    val transcodeJobId: String? = null,
-
-    @Column(name = "thumbnail_key", length = 512)
-    var thumbnailKey: String? = null,
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     val user: User
@@ -53,26 +41,6 @@ class UserMedia(
                 mediaType = UserMediaType.PHOTO,
                 s3Key = s3Key,
                 displayName = displayName,
-                user = user
-            )
-
-        fun ofVideo(
-            user: User,
-            s3Key: String,
-            originalS3Key: String?,
-            originalFileName: String?,
-            displayName: String,
-            transcodeJobId: String?,
-            thumbnailKey: String? = null
-        ): UserMedia =
-            UserMedia(
-                mediaType = UserMediaType.VIDEO,
-                s3Key = s3Key,
-                displayName = displayName,
-                originalS3Key = originalS3Key,
-                originalFileName = originalFileName,
-                transcodeJobId = transcodeJobId,
-                thumbnailKey = thumbnailKey,
                 user = user
             )
     }

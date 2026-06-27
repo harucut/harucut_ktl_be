@@ -1,7 +1,6 @@
 package com.harucut.storage.service
 
 import com.harucut.exception.BusinessException
-import com.harucut.exception.GlobalErrorCode
 import com.harucut.storage.dto.PresignedUploadResponse
 import com.harucut.storage.enums.ContentType
 import com.harucut.storage.enums.UploadType
@@ -79,8 +78,7 @@ class S3FileStorageService(
         uploadType: UploadType,
         originalFilename: String,
         contentType: ContentType,
-        publicId: String,
-        isTemp: Boolean
+        publicId: String
     ): PresignedUploadResponse {
         val extension = extractExtension(originalFilename)
         val validatedContentType = ContentType.validate(contentType.mimeType, extension)
@@ -91,7 +89,7 @@ class S3FileStorageService(
                 "${StorageErrorCode.UNSUPPORTED_UPLOAD_TYPE.message}: ${uploadType.name}"
             )
 
-        val key = strategy.generateKey(publicId, originalFilename, isTemp)
+        val key = strategy.generateKey(publicId, originalFilename)
 
         val putObjectRequest = PutObjectRequest.builder()
             .bucket(bucketName)
@@ -107,45 +105,6 @@ class S3FileStorageService(
         val url = s3Presigner.presignPutObject(presignRequest).url().toString()
 
         return PresignedUploadResponse(key, url, validatedContentType.mimeType, EXPIRY)
-    }
-
-    override fun moveFile(sourceKey: String, destinationKey: String): String {
-        if (sourceKey.isBlank() || destinationKey.isBlank()) {
-            throw BusinessException(
-                GlobalErrorCode.INVALID_INPUT_VALUE,
-                "Source Key 또는 Destination Key가 비어있습니다."
-            )
-        }
-
-        try {
-            s3Client.copyObject(
-                CopyObjectRequest.builder()
-                    .sourceBucket(bucketName).sourceKey(sourceKey)
-                    .destinationBucket(bucketName).destinationKey(destinationKey)
-                    .build()
-            )
-            s3Client.deleteObject(
-                DeleteObjectRequest.builder().bucket(bucketName).key(sourceKey).build()
-            )
-
-            return destinationKey
-        } catch (e: S3Exception) {
-            if (e.statusCode() == 404 || e.awsErrorDetails()?.errorCode() == "NoSuchKey") {
-                log.warn("Temp file not found (Expired?): {}", sourceKey)
-                throw BusinessException(
-                    GlobalErrorCode.FILE_EXPIRED,
-                    "임시 파일이 만료되었습니다. 이미지를 다시 업로드해주세요."
-                )
-            }
-            log.error("AWS S3 Error during move: {} -> {}", sourceKey, destinationKey, e)
-            throw BusinessException(GlobalErrorCode.INTERNAL_SERVER_ERROR, "S3 파일 이동 실패")
-        } catch (e: Exception) {
-            log.error("Unexpected error during file move", e)
-            throw BusinessException(
-                GlobalErrorCode.INTERNAL_SERVER_ERROR,
-                "파일 이동 중 알 수 없는 오류가 발생했습니다."
-            )
-        }
     }
 
     // ── helpers ──

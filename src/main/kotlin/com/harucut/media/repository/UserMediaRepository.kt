@@ -1,7 +1,6 @@
 package com.harucut.media.repository
 
 import com.harucut.media.entity.UserMedia
-import com.harucut.media.enums.UserMediaType
 import com.harucut.user.entity.User
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -19,21 +18,8 @@ interface UserMediaRepository : JpaRepository<UserMedia, Long> {
 
     fun findAllByUserOrderByCreatedAtDesc(user: User, pageable: Pageable): Page<UserMedia>
 
-    fun findAllByUserAndMediaTypeOrderByCreatedAtDesc(
-        user: User,
-        mediaType: UserMediaType,
-        pageable: Pageable
-    ): Page<UserMedia>
-
     fun findAllByUserAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
         user: User,
-        cutoff: LocalDateTime,
-        pageable: Pageable
-    ): Page<UserMedia>
-
-    fun findAllByUserAndMediaTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
-        user: User,
-        mediaType: UserMediaType,
         cutoff: LocalDateTime,
         pageable: Pageable
     ): Page<UserMedia>

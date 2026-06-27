@@ -6,7 +6,7 @@ interface UploadPathStrategy {
 
     val uploadType: UploadType
 
-    fun generateKey(publicId: String, originalFilename: String, isTemp: Boolean): String
+    fun generateKey(publicId: String, originalFilename: String): String
 
     fun extractExtension(originalFilename: String): String {
         val index = originalFilename.lastIndexOf(".")
