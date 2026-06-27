@@ -9,6 +9,5 @@ enum class StorageErrorCode(
     override val message: String
 ) : ErrorCode {
 
-    UNSUPPORTED_UPLOAD_TYPE("STOR-000", HttpStatus.BAD_REQUEST, "Unsupported upload type."),
-    TRANSCODE_FAILED("STOR-001", HttpStatus.INTERNAL_SERVER_ERROR, "Video transcoding request failed.")
+    UNSUPPORTED_UPLOAD_TYPE("STOR-000", HttpStatus.BAD_REQUEST, "Unsupported upload type.")
 }

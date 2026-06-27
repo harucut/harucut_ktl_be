@@ -57,7 +57,7 @@ class FileControllerTest : SecurityBeansMockSupport() {
         fun success() {
             // given
             every {
-                fileStorageService.generatePresignedUploadUrl(any(), any(), any(), "pub-1", false)
+                fileStorageService.generatePresignedUploadUrl(any(), any(), any(), "pub-1")
             } returns PresignedUploadResponse(
                 key = "uploads/users/pub-1/profile/x.png",
                 uploadUrl = "https://x.s3/upload",
@@ -67,8 +67,7 @@ class FileControllerTest : SecurityBeansMockSupport() {
             val body = mapOf(
                 "type" to "PROFILE",
                 "filename" to "photo.png",
-                "contentType" to "PNG",
-                "isTemp" to false
+                "contentType" to "PNG"
             )
 
             // when & then
@@ -82,7 +81,7 @@ class FileControllerTest : SecurityBeansMockSupport() {
                 jsonPath("$.data.contentType") { value("image/png") }
             }
 
-            verify { fileStorageService.generatePresignedUploadUrl(any(), any(), any(), "pub-1", false) }
+            verify { fileStorageService.generatePresignedUploadUrl(any(), any(), any(), "pub-1") }
         }
 
         @Test
@@ -102,7 +101,7 @@ class FileControllerTest : SecurityBeansMockSupport() {
                 status { isBadRequest() }
             }
 
-            verify(exactly = 0) { fileStorageService.generatePresignedUploadUrl(any(), any(), any(), any(), any()) }
+            verify(exactly = 0) { fileStorageService.generatePresignedUploadUrl(any(), any(), any(), any()) }
         }
 
         @Test

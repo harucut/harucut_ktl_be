@@ -48,7 +48,6 @@ dependencies {
     // AWS SDK 2.x
     implementation(platform("software.amazon.awssdk:bom:2.25.67"))
     implementation("software.amazon.awssdk:s3")
-    implementation("software.amazon.awssdk:mediaconvert")
 
     // NanoId
     implementation("com.aventrix.jnanoid:jnanoid:2.0.0")

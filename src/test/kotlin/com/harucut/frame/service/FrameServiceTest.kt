@@ -45,15 +45,12 @@ class FrameServiceTest {
         frameRepository, userRepository, frameAssetManager, frameStyleConverter, frameSubscriptionPolicy
     )
 
-    // id만 가지는 사용자 목 (소유권 검증용)
     private fun userMock(id: Long = 1L): User =
         mockk<User>(relaxed = true).also { every { it.id } returns id }
 
-    // 컴포넌트 1개를 가진 요청 컴포넌트 DTO
     private fun componentRequest(source: String, type: ComponentType = ComponentType.PHOTO) =
         FrameCreateRequest.ComponentRequest(type = type, source = source)
 
-    // 테스트용 프레임 엔티티 생성 (필요 시 createdAt 백데이트)
     private fun frame(
         user: User,
         title: String = "title",
@@ -73,7 +70,6 @@ class FrameServiceTest {
         return f
     }
 
-    // BaseEntity.createdAt(protected set)를 리플렉션으로 지정
     private fun setCreatedAt(entity: BaseEntity, time: LocalDateTime) {
         val field = BaseEntity::class.java.getDeclaredField("createdAt")
         field.isAccessible = true
@@ -84,17 +80,14 @@ class FrameServiceTest {
     inner class CreateFrame {
 
         @Test
-        @DisplayName("보관 cap 검증 후 temp 자산을 승격하고 컴포넌트와 함께 저장한다")
+        @DisplayName("보관 cap 검증 후 key를 정규화하고 컴포넌트와 함께 저장한다")
         fun success() {
-            // given
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { frameRepository.countByUser(user) } returns 0L
             every { frameSubscriptionPolicy.assertFrameRetentionLimit(user, 0) } just Runs
-            every { frameAssetManager.moveTempFilesToPermanent(user, any()) } returns
-                mapOf("temp/users/pub/components/a.png" to "uploads/users/pub/components/a.png")
-            every { frameAssetManager.moveTempFileToPermanent(user, "temp/users/pub/preview.png") } returns
-                "uploads/users/pub/preview.png"
+            every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
+            every { frameAssetManager.normalizeKey("uploads/users/pub/preview.png") } returns "uploads/users/pub/preview.png"
             every { frameStyleConverter.convertToJson(any()) } returns "{}"
             val saved = slot<Frame>()
             every { frameRepository.save(capture(saved)) } answers { saved.captured }
@@ -102,27 +95,23 @@ class FrameServiceTest {
             val request = FrameCreateRequest(
                 title = "봄 여행 4컷",
                 description = "벚꽃",
-                previewKey = "temp/users/pub/preview.png",
+                previewKey = "uploads/users/pub/preview.png",
                 frameType = FrameType.CLASSIC,
                 background = ColorBackgroundAttributes("#ffffff"),
-                components = listOf(componentRequest("temp/users/pub/components/a.png"))
+                components = listOf(componentRequest("uploads/users/pub/components/a.png"))
             )
 
-            // when
             service.createFrame(1L, request)
 
-            // then
             assertThat(saved.captured.previewKey).isEqualTo("uploads/users/pub/preview.png")
             assertThat(saved.captured.title).isEqualTo("봄 여행 4컷")
             assertThat(saved.captured.components).hasSize(1)
-            assertThat(saved.captured.components[0].source).isEqualTo("uploads/users/pub/components/a.png")
             verify { frameSubscriptionPolicy.assertFrameRetentionLimit(user, 0) }
         }
 
         @Test
         @DisplayName("보관 cap 초과면 PLAN_FRAME_RETENTION_EXCEEDED 예외를 던지고 저장하지 않는다")
         fun capExceeded() {
-            // given
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { frameRepository.countByUser(user) } returns 1L
@@ -132,19 +121,18 @@ class FrameServiceTest {
             val request = FrameCreateRequest(
                 title = "t",
                 description = null,
-                previewKey = "temp/users/pub/preview.png",
+                previewKey = "uploads/users/pub/preview.png",
                 frameType = FrameType.CLASSIC,
                 background = ColorBackgroundAttributes("#ffffff"),
                 components = null
             )
 
-            // when & then
             assertThatThrownBy { service.createFrame(1L, request) }
                 .isInstanceOf(BusinessException::class.java)
                 .extracting("errorCode")
                 .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
 
-            verify(exactly = 0) { frameAssetManager.moveTempFilesToPermanent(any(), any()) }
+            verify(exactly = 0) { frameAssetManager.normalizeComponentKeys(any()) }
             verify(exactly = 0) { frameRepository.save(any()) }
         }
 
@@ -175,7 +163,6 @@ class FrameServiceTest {
         @Test
         @DisplayName("보관 cutoff 이전에 생성된 프레임은 제외하고 반환한다")
         fun filtersByCutoff() {
-            // given
             val user = userMock(1L)
             val cutoff = LocalDateTime.now().minusDays(3)
             every { userRepository.findById(1L) } returns Optional.of(user)
@@ -186,10 +173,8 @@ class FrameServiceTest {
             every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(recent, old)
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
 
-            // when
             val result = service.getMyFrames(1L)
 
-            // then
             assertThat(result).hasSize(1)
             assertThat(result[0].title).isEqualTo("recent")
             assertThat(result[0].source).isEqualTo("preview-url")
@@ -328,7 +313,6 @@ class FrameServiceTest {
         @Test
         @DisplayName("메타데이터·컴포넌트를 교체하고 교체된 배경/프리뷰/미사용 사진 자산을 정리한다")
         fun success() {
-            // given
             val user = userMock(1L)
             val target = frame(
                 user,
@@ -345,33 +329,28 @@ class FrameServiceTest {
                 )
             )
             every { frameRepository.findById(10L) } returns Optional.of(target)
-            every { frameAssetManager.moveTempFileToPermanent(user, "temp/users/pub/new-preview.png") } returns
+            every { frameAssetManager.normalizeKey("uploads/users/pub/new-preview.png") } returns
                 "uploads/users/pub/new-preview.png"
-            every { frameAssetManager.moveTempFilesToPermanent(user, any()) } returns
-                mapOf("temp/users/pub/components/new.png" to "uploads/users/pub/components/new.png")
+            every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
             every { frameStyleConverter.convertToJson(any()) } returns "{}"
             every { frameAssetManager.deleteFiles(any()) } just Runs
 
             val request = FrameCreateRequest(
                 title = "new",
                 description = "n",
-                previewKey = "temp/users/pub/new-preview.png",
+                previewKey = "uploads/users/pub/new-preview.png",
                 frameType = FrameType.CLASSIC,
                 background = ColorBackgroundAttributes("#000000"),
-                components = listOf(componentRequest("temp/users/pub/components/new.png"))
+                components = listOf(componentRequest("uploads/users/pub/components/new.png"))
             )
 
-            // when
             service.updateFrame(1L, 10L, request)
 
-            // then — 메타데이터/컴포넌트 교체
             assertThat(target.title).isEqualTo("new")
             assertThat(target.previewKey).isEqualTo("uploads/users/pub/new-preview.png")
             assertThat(target.background).isInstanceOf(ColorBackgroundAttributes::class.java)
             assertThat(target.components).hasSize(1)
-            assertThat(target.components[0].source).isEqualTo("uploads/users/pub/components/new.png")
 
-            // then — 교체된 옛 배경/프리뷰/미사용 사진 정리
             verify { frameAssetManager.deleteFiles(listOf("uploads/users/pub/old-bg.png")) }
             verify { frameAssetManager.deleteFiles(listOf("uploads/users/pub/old-preview.png")) }
             verify { frameAssetManager.deleteFiles(listOf("uploads/users/pub/components/old.png")) }

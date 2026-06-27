@@ -1,18 +1,12 @@
 package com.harucut.media.dto
 
-import com.harucut.media.enums.UserMediaType
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.LocalDateTime
 
 @Schema(description = "사용자 미디어 등록 요청")
 data class UserMediaRegisterRequest(
-
-    @field:NotNull(message = "미디어 타입은 필수입니다.")
-    @Schema(description = "미디어 타입", example = "PHOTO")
-    val mediaType: UserMediaType,
 
     @field:NotBlank(message = "S3 Key는 필수입니다.")
     @Schema(
@@ -21,7 +15,7 @@ data class UserMediaRegisterRequest(
     )
     val s3Key: String,
 
-    @Schema(description = "사용자 표시 파일명", example = "나의 기록.mp4")
+    @Schema(description = "사용자 표시 파일명", example = "나의 기록.png")
     val displayName: String? = null
 )
 
@@ -40,29 +34,14 @@ data class UserMediaResponse(
     @Schema(description = "미디어 ID", example = "1")
     val mediaId: Long?,
 
-    @Schema(description = "미디어 타입", example = "VIDEO")
-    val mediaType: UserMediaType,
-
-    @Schema(description = "S3 Key", example = "uploads/users/AbCdEf12Gh/mp4/550e8400-...mp4")
+    @Schema(description = "S3 Key", example = "uploads/users/AbCdEf12Gh/fourcuts/550e8400-...png")
     val s3Key: String,
 
-    @Schema(description = "사용자 표시 파일명", example = "harucut_20260318_102030.mp4")
+    @Schema(description = "사용자 표시 파일명", example = "harucut_20260318_102030.png")
     val displayName: String,
 
-    @Schema(description = "다운로드 URL (사진만 즉시 제공, 영상은 null)")
+    @Schema(description = "다운로드 URL")
     val downloadUrl: String?,
-
-    @Schema(description = "썸네일 조회 URL (영상 포스터, 없으면 null)")
-    val thumbnailUrl: String?,
-
-    @Schema(description = "원본 S3 Key")
-    val originalS3Key: String?,
-
-    @Schema(description = "원본 파일명")
-    val originalFileName: String?,
-
-    @Schema(description = "변환 작업 ID")
-    val transcodeJobId: String?,
 
     @Schema(description = "등록 시각")
     val createdAt: LocalDateTime

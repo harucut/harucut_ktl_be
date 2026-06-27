@@ -17,10 +17,7 @@ data class PresignedUploadRequest(
     val filename: String,
 
     @Schema(description = "Content-Type, 타입만 대문자로 전송하며 확장자와 일치해야 함", example = "PNG")
-    val contentType: ContentType,
-
-    @Schema(description = "파일의 임시저장 여부", example = "false", defaultValue = "false")
-    val isTemp: Boolean = false
+    val contentType: ContentType
 )
 
 @Schema(description = "Presigned URL 생성 응답 DTO")

@@ -43,8 +43,7 @@ class FileController(
             request.type,
             request.filename,
             request.contentType,
-            principal.publicId,
-            request.isTemp
+            principal.publicId
         )
 
         return Response.ok(response).toResponseEntity()

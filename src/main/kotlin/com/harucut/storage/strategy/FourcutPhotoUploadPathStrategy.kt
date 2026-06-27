@@ -9,7 +9,7 @@ class FourcutPhotoUploadPathStrategy : UploadPathStrategy {
 
     override val uploadType = UploadType.FOURCUT_PHOTO
 
-    override fun generateKey(publicId: String, originalFilename: String, isTemp: Boolean): String {
+    override fun generateKey(publicId: String, originalFilename: String): String {
         val uniqueName = "${UUID.randomUUID()}${extractExtension(originalFilename)}"
         return "uploads/users/$publicId/fourcuts/$uniqueName"
     }

@@ -4,7 +4,6 @@ import com.harucut.auth.security.CustomUserPrincipal
 import com.harucut.media.dto.UserMediaDisplayNameUpdateRequest
 import com.harucut.media.dto.UserMediaRegisterRequest
 import com.harucut.media.dto.UserMediaResponse
-import com.harucut.media.enums.UserMediaType
 import com.harucut.media.service.UserMediaService
 import com.harucut.util.response.PageResponse
 import com.harucut.util.response.Response
@@ -20,7 +19,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
-@Tag(name = "User Media", description = "사용자 미디어(사진/영상) 관리 API")
+@Tag(name = "User Media", description = "사용자 미디어(사진) 관리 API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/auth/user/media")
@@ -44,7 +43,7 @@ class UserMediaController(
         return Response.ok(response).toResponseEntity()
     }
 
-    @Operation(summary = "내 미디어 목록 조회", description = "사용자의 사진/영상 목록과 다운로드 URL을 페이지 단위로 반환합니다.")
+    @Operation(summary = "내 미디어 목록 조회", description = "사용자의 사진 목록과 다운로드 URL을 페이지 단위로 반환합니다.")
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "조회 성공"),
         ApiResponse(responseCode = "401", description = "인증 필요")
@@ -52,14 +51,12 @@ class UserMediaController(
     @GetMapping
     fun getMyMedia(
         @Parameter(hidden = true) @AuthenticationPrincipal principal: CustomUserPrincipal,
-        @Parameter(description = "미디어 타입 필터. PHOTO는 사진, VIDEO는 영상입니다.", example = "PHOTO")
-        @RequestParam(value = "type", required = false) type: UserMediaType?,
         @Parameter(description = "페이지 번호(0부터 시작)", schema = Schema(defaultValue = "0", minimum = "0"))
         @RequestParam(value = "page", defaultValue = "0") page: Int,
         @Parameter(description = "페이지 크기. 기본값은 10입니다.", schema = Schema(defaultValue = "10", minimum = "1"))
         @RequestParam(value = "size", defaultValue = "10") size: Int
     ): ResponseEntity<Response<PageResponse<UserMediaResponse>>> {
-        val response = userMediaService.getMyMedia(principal.id!!, type, page, size)
+        val response = userMediaService.getMyMedia(principal.id!!, page, size)
         return Response.ok(response).toResponseEntity()
     }
 

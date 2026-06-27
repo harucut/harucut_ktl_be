@@ -3,7 +3,6 @@ package com.harucut.media.service
 import com.harucut.exception.BusinessException
 import com.harucut.exception.GlobalErrorCode
 import com.harucut.media.entity.UserMedia
-import com.harucut.media.enums.UserMediaType
 import com.harucut.media.policy.MediaSubscriptionPolicy
 import com.harucut.media.dto.UserMediaDisplayNameUpdateRequest
 import com.harucut.media.dto.UserMediaRegisterRequest
@@ -58,11 +57,10 @@ class UserMediaServiceTest {
 
             // when
             val res = service.registerMedia(
-                1L, UserMediaRegisterRequest(UserMediaType.PHOTO, "uploads/users/pub/fourcuts/x.png", "내 사진")
+                1L, UserMediaRegisterRequest("uploads/users/pub/fourcuts/x.png", "내 사진")
             )
 
             // then
-            assertThat(res.mediaType).isEqualTo(UserMediaType.PHOTO)
             assertThat(res.displayName).isEqualTo("내 사진.png")
             assertThat(res.downloadUrl).isEqualTo("https://dl")
             assertThat(saved.captured.s3Key).isEqualTo("uploads/users/pub/fourcuts/x.png")
@@ -83,7 +81,6 @@ class UserMediaServiceTest {
             service.registerMedia(
                 1L,
                 UserMediaRegisterRequest(
-                    UserMediaType.PHOTO,
                     "https://bucket.s3.ap-northeast-2.amazonaws.com/uploads/users/pub/fourcuts/x.png",
                     "x"
                 )
@@ -105,7 +102,7 @@ class UserMediaServiceTest {
 
             // when
             val res = service.registerMedia(
-                1L, UserMediaRegisterRequest(UserMediaType.PHOTO, "uploads/users/pub/fourcuts/x.png", null)
+                1L, UserMediaRegisterRequest("uploads/users/pub/fourcuts/x.png", null)
             )
 
             // then
@@ -124,7 +121,7 @@ class UserMediaServiceTest {
 
             // when
             val res = service.registerMedia(
-                1L, UserMediaRegisterRequest(UserMediaType.PHOTO, "uploads/users/pub/fourcuts/x.png", "무시됨")
+                1L, UserMediaRegisterRequest("uploads/users/pub/fourcuts/x.png", "무시됨")
             )
 
             // then
@@ -145,7 +142,7 @@ class UserMediaServiceTest {
             // when & then
             assertThatThrownBy {
                 service.registerMedia(
-                    1L, UserMediaRegisterRequest(UserMediaType.PHOTO, "uploads/users/pub/fourcuts/x.png", "x")
+                    1L, UserMediaRegisterRequest("uploads/users/pub/fourcuts/x.png", "x")
                 )
             }
                 .isInstanceOf(BusinessException::class.java)
@@ -158,8 +155,8 @@ class UserMediaServiceTest {
     inner class GetMyMedia {
 
         @Test
-        @DisplayName("cutoff·타입이 없으면 전체 목록 finder를 호출한다")
-        fun noCutoffNoType() {
+        @DisplayName("cutoff가 없으면 전체 목록 finder를 호출한다")
+        fun noCutoff() {
             // given
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
@@ -172,36 +169,12 @@ class UserMediaServiceTest {
             every { fileStorageService.generatePresignedDownloadUrl(any(), any()) } returns "https://dl"
 
             // when
-            val res = service.getMyMedia(1L, null, 0, 10)
+            val res = service.getMyMedia(1L, 0, 10)
 
             // then
             assertThat(res.content).hasSize(1)
             assertThat(res.totalElements).isEqualTo(1)
             verify { userMediaRepository.findAllByUserOrderByCreatedAtDesc(user, any()) }
-        }
-
-        @Test
-        @DisplayName("타입 필터가 있으면 타입 finder를 호출한다")
-        fun withType() {
-            // given
-            val user = userMock(1L)
-            every { userRepository.findById(1L) } returns Optional.of(user)
-            every { subscriptionPolicy.resolveHistoryCutoff(user) } returns null
-            val page = PageImpl(
-                listOf(UserMedia.ofVideo(user, "a/v.mp4", null, null, "v.mp4", "job", null)),
-                PageRequest.of(0, 10), 1
-            )
-            every {
-                userMediaRepository.findAllByUserAndMediaTypeOrderByCreatedAtDesc(user, UserMediaType.VIDEO, any())
-            } returns page
-
-            // when
-            val res = service.getMyMedia(1L, UserMediaType.VIDEO, 0, 10)
-
-            // then
-            assertThat(res.content).hasSize(1)
-            assertThat(res.content[0].downloadUrl).isNull()
-            verify { userMediaRepository.findAllByUserAndMediaTypeOrderByCreatedAtDesc(user, UserMediaType.VIDEO, any()) }
         }
 
         @Test
@@ -218,7 +191,7 @@ class UserMediaServiceTest {
             } returns page
 
             // when
-            service.getMyMedia(1L, null, 0, 10)
+            service.getMyMedia(1L, 0, 10)
 
             // then
             verify {
@@ -232,7 +205,7 @@ class UserMediaServiceTest {
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
 
-            assertThatThrownBy { service.getMyMedia(1L, null, -1, 10) }
+            assertThatThrownBy { service.getMyMedia(1L, -1, 10) }
                 .isInstanceOf(BusinessException::class.java)
                 .extracting("errorCode")
                 .isEqualTo(GlobalErrorCode.INVALID_INPUT_VALUE)
@@ -301,77 +274,6 @@ class UserMediaServiceTest {
 
             assertThat(res.displayName).hasSize(255)
             assertThat(res.displayName).endsWith(".png")
-        }
-    }
-
-    @Nested
-    inner class SaveTranscodedVideo {
-
-        @Test
-        @DisplayName("userPublicId가 비어있으면 INVALID_INPUT_VALUE 예외를 던진다")
-        fun blankPublicId() {
-            assertThatThrownBy { service.saveTranscodedVideo("", null, "s3://b/out.mp4", null, "job") }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(GlobalErrorCode.INVALID_INPUT_VALUE)
-        }
-
-        @Test
-        @DisplayName("변환본을 저장하고 원본 key·썸네일 key·표시명을 채워 응답한다")
-        fun success() {
-            val user = userMock(1L)
-            every { userRepository.findByPublicId("pub-1") } returns user
-            every { userMediaRepository.findByS3Key("uploads/users/pub-1/mp4/v.mp4") } returns null
-            val saved = slot<UserMedia>()
-            every { userMediaRepository.save(capture(saved)) } answers { saved.captured }
-            every { fileStorageService.generatePresignedGetUrl("uploads/users/pub-1/thumbnail/v.0000000.jpg") } returns "https://thumb"
-
-            val res = service.saveTranscodedVideo(
-                "pub-1",
-                "v.webm",
-                "s3://bucket/uploads/users/pub-1/mp4/v.mp4",
-                "s3://bucket/uploads/users/pub-1/thumbnail/v.0000000.jpg",
-                "job-1"
-            )
-
-            assertThat(res.mediaType).isEqualTo(UserMediaType.VIDEO)
-            assertThat(res.displayName).isEqualTo("v.mp4")
-            assertThat(res.downloadUrl).isNull()
-            assertThat(res.thumbnailUrl).isEqualTo("https://thumb")
-            assertThat(saved.captured.s3Key).isEqualTo("uploads/users/pub-1/mp4/v.mp4")
-            assertThat(saved.captured.originalS3Key).isEqualTo("uploads/users/pub-1/webm/v.webm")
-            assertThat(saved.captured.thumbnailKey).isEqualTo("uploads/users/pub-1/thumbnail/v.0000000.jpg")
-            assertThat(saved.captured.transcodeJobId).isEqualTo("job-1")
-        }
-
-        @Test
-        @DisplayName("썸네일 경로가 없으면 thumbnailKey와 thumbnailUrl이 null 이다")
-        fun noThumbnail() {
-            val user = userMock(1L)
-            every { userRepository.findByPublicId("pub-1") } returns user
-            every { userMediaRepository.findByS3Key(any()) } returns null
-            val saved = slot<UserMedia>()
-            every { userMediaRepository.save(capture(saved)) } answers { saved.captured }
-
-            val res = service.saveTranscodedVideo("pub-1", "v.webm", "s3://b/uploads/users/pub-1/mp4/v.mp4", null, "job-1")
-
-            assertThat(saved.captured.thumbnailKey).isNull()
-            assertThat(res.thumbnailUrl).isNull()
-            verify(exactly = 0) { fileStorageService.generatePresignedGetUrl(any()) }
-        }
-
-        @Test
-        @DisplayName("이미 저장된 변환본이면 저장 없이 기존 항목을 반환한다(멱등)")
-        fun idempotent() {
-            val user = userMock(1L)
-            val existing = UserMedia.ofVideo(user, "uploads/users/pub-1/mp4/v.mp4", null, null, "v.mp4", "job-1", null)
-            every { userRepository.findByPublicId("pub-1") } returns user
-            every { userMediaRepository.findByS3Key("uploads/users/pub-1/mp4/v.mp4") } returns existing
-
-            val res = service.saveTranscodedVideo("pub-1", "v.webm", "s3://b/uploads/users/pub-1/mp4/v.mp4", null, "job-1")
-
-            assertThat(res.displayName).isEqualTo("v.mp4")
-            verify(exactly = 0) { userMediaRepository.save(any()) }
         }
     }
 }

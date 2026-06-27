@@ -23,69 +23,10 @@ class SubscriptionPolicyServiceTest {
 
     private fun user(id: Long? = 1L): User = mockk<User>(relaxed = true).also { every { it.id } returns id }
 
-    private fun subscription(tier: PlanTier, uploadCount: Int = 0): UserSubscription =
+    private fun subscription(tier: PlanTier): UserSubscription =
         mockk<UserSubscription>(relaxed = true).also {
             every { it.planTier } returns tier
-            every { it.currentVideoUploadCount } returns uploadCount
         }
-
-    @Nested
-    inner class AssertAndConsumeVideoUploadQuota {
-
-        @Test
-        @DisplayName("한도 미만이면 사이클 동기화 후 업로드 횟수를 증가시킨다")
-        fun underLimit() {
-            val u = user()
-            val sub = subscription(PlanTier.BASIC, uploadCount = 4)
-            every { userSubscriptionRepository.findByUserId(1L) } returns sub
-
-            service.assertAndConsumeVideoUploadQuota(u)
-
-            verify { sub.syncQuotaCycle(any()) }
-            verify { sub.increaseVideoUploadCount() }
-        }
-
-        @Test
-        @DisplayName("BASIC 월 한도(5)에 도달하면 PLAN_VIDEO_UPLOAD_LIMIT_EXCEEDED 예외를 던진다")
-        fun atLimit() {
-            val u = user()
-            val sub = subscription(PlanTier.BASIC, uploadCount = 5)
-            every { userSubscriptionRepository.findByUserId(1L) } returns sub
-
-            assertThatThrownBy { service.assertAndConsumeVideoUploadQuota(u) }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(SubscriptionErrorCode.PLAN_VIDEO_UPLOAD_LIMIT_EXCEEDED)
-
-            verify(exactly = 0) { sub.increaseVideoUploadCount() }
-        }
-
-        @Test
-        @DisplayName("PRO(무제한)는 사용량과 무관하게 통과하고 횟수를 증가시킨다")
-        fun unlimited() {
-            val u = user()
-            val sub = subscription(PlanTier.PRO, uploadCount = 9999)
-            every { userSubscriptionRepository.findByUserId(1L) } returns sub
-
-            service.assertAndConsumeVideoUploadQuota(u)
-
-            verify { sub.increaseVideoUploadCount() }
-        }
-
-        @Test
-        @DisplayName("구독이 없으면 기본 구독을 생성·저장한 뒤 차감한다")
-        fun lazyCreate() {
-            val u = user()
-            val saved = subscription(PlanTier.BASIC, uploadCount = 0)
-            every { userSubscriptionRepository.findByUserId(1L) } returns null
-            every { userSubscriptionRepository.save(any<UserSubscription>()) } returns saved
-
-            service.assertAndConsumeVideoUploadQuota(u)
-
-            verify { userSubscriptionRepository.save(any<UserSubscription>()) }
-            verify { saved.increaseVideoUploadCount() }
-        }
-    }
 
     @Nested
     inner class ResolveHistoryCutoff {

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.harucut.auth.security.CustomUserPrincipal
 import com.harucut.config.SecurityConfig
 import com.harucut.media.dto.UserMediaResponse
-import com.harucut.media.enums.UserMediaType
 import com.harucut.media.service.UserMediaService
 import com.harucut.support.SecurityBeansMockSupport
 import com.harucut.util.response.PageResponse
@@ -54,14 +53,9 @@ class UserMediaControllerTest : SecurityBeansMockSupport() {
 
     private fun response() = UserMediaResponse(
         mediaId = 1L,
-        mediaType = UserMediaType.PHOTO,
         s3Key = "uploads/users/pub-1/fourcuts/x.png",
         displayName = "x.png",
         downloadUrl = "https://dl",
-        thumbnailUrl = null,
-        originalS3Key = null,
-        originalFileName = null,
-        transcodeJobId = null,
         createdAt = LocalDateTime.now()
     )
 
@@ -74,7 +68,6 @@ class UserMediaControllerTest : SecurityBeansMockSupport() {
         fun success() {
             every { userMediaService.registerMedia(1L, any()) } returns response()
             val body = mapOf(
-                "mediaType" to "PHOTO",
                 "s3Key" to "uploads/users/pub-1/fourcuts/x.png",
                 "displayName" to "x"
             )
@@ -86,7 +79,6 @@ class UserMediaControllerTest : SecurityBeansMockSupport() {
             }.andExpect {
                 status { isOk() }
                 jsonPath("$.data.mediaId") { value(1) }
-                jsonPath("$.data.mediaType") { value("PHOTO") }
             }
 
             verify { userMediaService.registerMedia(1L, any()) }
@@ -95,7 +87,7 @@ class UserMediaControllerTest : SecurityBeansMockSupport() {
         @Test
         @DisplayName("s3Key가 비어있으면 400을 반환한다")
         fun validationFail() {
-            val body = mapOf("mediaType" to "PHOTO", "s3Key" to "")
+            val body = mapOf("s3Key" to "")
 
             mockMvc.post("/api/auth/user/media") {
                 with(authentication(authToken()))
@@ -131,7 +123,7 @@ class UserMediaControllerTest : SecurityBeansMockSupport() {
         @Test
         @DisplayName("목록을 200으로 반환한다")
         fun success() {
-            every { userMediaService.getMyMedia(eq(1L), any(), any(), any()) } returns
+            every { userMediaService.getMyMedia(eq(1L), any(), any()) } returns
                 PageResponse(listOf(response()), 1, 1, 0, 10)
 
             mockMvc.get("/api/auth/user/media") {
