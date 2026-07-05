@@ -3,6 +3,7 @@ package com.harucut.user.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.harucut.auth.security.CustomUserPrincipal
 import com.harucut.config.SecurityConfig
+import com.harucut.subscription.plan.PlanTier
 import com.harucut.user.dto.SubscriptionUsageResponse
 import com.harucut.user.dto.UserInfoResponse
 import com.harucut.user.service.UserService
@@ -58,14 +59,14 @@ class UserControllerTest : SecurityBeansMockSupport() {
         profileUrl = "https://profile",
         loginPlatform = "HARUCUT",
         planTier = "PLUS",
-        monthlyPrice = 3000
+        monthlyPrice = 3900
     )
 
     private fun usage() = SubscriptionUsageResponse(
-        planTier = "BASIC",
-        frameRetentionLimit = 1,
+        planTier = "PLUS",
+        frameRetentionLimit = 3,
         frameRetentionUsedCount = 1,
-        frameRetentionRemainingCount = 0,
+        frameRetentionRemainingCount = 2,
         frameRetentionUnlimited = false
     )
 
@@ -83,7 +84,7 @@ class UserControllerTest : SecurityBeansMockSupport() {
             }.andExpect {
                 status { isOk() }
                 jsonPath("$.data.planTier") { value("PLUS") }
-                jsonPath("$.data.monthlyPrice") { value(3000) }
+                jsonPath("$.data.monthlyPrice") { value(3900) }
             }
         }
 
@@ -114,6 +115,70 @@ class UserControllerTest : SecurityBeansMockSupport() {
             }.andExpect {
                 status { isOk() }
                 jsonPath("$.data.frameRetentionUsedCount") { value(1) }
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/auth/user/subscription/plan")
+    inner class ChangePlan {
+
+        @Test
+        @DisplayName("planTier로 요금제를 변경하고 200을 반환한다")
+        fun success() {
+            every { userService.changePlan(1L, PlanTier.PLUS) } just Runs
+
+            mockMvc.patch("/api/auth/user/subscription/plan") {
+                with(authentication(authToken()))
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(mapOf("planTier" to "PLUS"))
+            }.andExpect {
+                status { isOk() }
+            }
+
+            verify { userService.changePlan(1L, PlanTier.PLUS) }
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 요금제 값이면 400을 반환한다")
+        fun invalidTier() {
+            mockMvc.patch("/api/auth/user/subscription/plan") {
+                with(authentication(authToken()))
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(mapOf("planTier" to "MEGA"))
+            }.andExpect {
+                status { isBadRequest() }
+            }
+
+            verify(exactly = 0) { userService.changePlan(any(), any()) }
+        }
+
+        @Test
+        @DisplayName("planTier가 없으면 400을 반환한다")
+        fun missingTier() {
+            mockMvc.patch("/api/auth/user/subscription/plan") {
+                with(authentication(authToken()))
+                contentType = MediaType.APPLICATION_JSON
+                content = "{}"
+            }.andExpect {
+                status { isBadRequest() }
+            }
+
+            verify(exactly = 0) { userService.changePlan(any(), any()) }
+        }
+
+        @Test
+        @DisplayName("미인증이면 401을 반환한다")
+        fun unauthorized() {
+            every { customAuthenticationEntryPoint.commence(any(), any(), any()) } answers {
+                secondArg<HttpServletResponse>().sendError(401)
+            }
+
+            mockMvc.patch("/api/auth/user/subscription/plan") {
+                contentType = MediaType.APPLICATION_JSON
+                content = objectMapper.writeValueAsString(mapOf("planTier" to "PLUS"))
+            }.andExpect {
+                status { isUnauthorized() }
             }
         }
     }

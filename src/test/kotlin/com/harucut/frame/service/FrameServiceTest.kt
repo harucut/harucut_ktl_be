@@ -167,6 +167,7 @@ class FrameServiceTest {
             val cutoff = LocalDateTime.now().minusDays(3)
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { frameSubscriptionPolicy.resolveHistoryCutoff(user) } returns cutoff
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns null
 
             val recent = frame(user, title = "recent")
             val old = frame(user, title = "old", createdAt = LocalDateTime.now().minusDays(10))
@@ -186,6 +187,7 @@ class FrameServiceTest {
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { frameSubscriptionPolicy.resolveHistoryCutoff(user) } returns null
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns null
 
             val a = frame(user, title = "a")
             val b = frame(user, title = "b", createdAt = LocalDateTime.now().minusYears(5))
@@ -195,6 +197,25 @@ class FrameServiceTest {
             val result = service.getMyFrames(1L)
 
             assertThat(result).hasSize(2)
+        }
+
+        @Test
+        @DisplayName("동시 보관 cap을 초과한 프레임은 최신순으로 cap 개수만 반환한다")
+        fun softCap() {
+            val user = userMock(1L)
+            every { userRepository.findById(1L) } returns Optional.of(user)
+            every { frameSubscriptionPolicy.resolveHistoryCutoff(user) } returns null
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns 1
+
+            val newest = frame(user, title = "newest")
+            val older = frame(user, title = "older", createdAt = LocalDateTime.now().minusDays(1))
+            every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(newest, older)
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = service.getMyFrames(1L)
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0].title).isEqualTo("newest")
         }
     }
 
@@ -208,12 +229,29 @@ class FrameServiceTest {
             val target = frame(user, title = "내 프레임")
             every { frameRepository.findById(10L) } returns Optional.of(target)
             every { frameSubscriptionPolicy.assertHistoryAccessible(any(), any()) } just Runs
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns null
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
 
             val result = service.getFrame(10L, 1L)
 
             assertThat(result.title).isEqualTo("내 프레임")
             assertThat(result.source).isEqualTo("preview-url")
+        }
+
+        @Test
+        @DisplayName("동시 보관 cap 밖의 프레임이면 PLAN_FRAME_RETENTION_EXCEEDED 예외를 던진다")
+        fun beyondRetentionCap() {
+            val user = userMock(1L)
+            val target = frame(user, createdAt = LocalDateTime.now().minusDays(1))
+            every { frameRepository.findById(10L) } returns Optional.of(target)
+            every { frameSubscriptionPolicy.assertHistoryAccessible(any(), any()) } just Runs
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns 1
+            every { frameRepository.countByUserAndCreatedAtAfter(user, any()) } returns 1L
+
+            assertThatThrownBy { service.getFrame(10L, 1L) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
         }
 
         @Test

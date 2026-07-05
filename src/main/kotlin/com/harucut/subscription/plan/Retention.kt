@@ -22,4 +22,14 @@ sealed interface Retention {
         override fun isAccessible(createdAt: LocalDateTime?, now: LocalDateTime): Boolean =
             createdAt == null || !createdAt.isBefore(cutoffFrom(now))
     }
+
+    data class Months(val months: Long) : Retention {
+        init {
+            require(months > 0) { "months는 1 이상이어야 합니다: $months" }
+        }
+
+        override fun cutoffFrom(now: LocalDateTime): LocalDateTime = now.minusMonths(months)
+        override fun isAccessible(createdAt: LocalDateTime?, now: LocalDateTime): Boolean =
+            createdAt == null || !createdAt.isBefore(cutoffFrom(now))
+    }
 }

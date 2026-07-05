@@ -10,11 +10,11 @@ class PlanPricingPropertiesTest {
     private val properties = PlanPricingProperties()
 
     @Test
-    @DisplayName("기본 요금제별 월 구독료를 반환한다 (BASIC 0 / PLUS 3000 / PRO 10000)")
+    @DisplayName("기본 요금제별 월 구독료를 반환한다 (BASIC 0 / PLUS 3900 / PRO 9900)")
     fun defaultPrices() {
         assertThat(properties.priceOf(PlanTier.BASIC)).isEqualTo(0)
-        assertThat(properties.priceOf(PlanTier.PLUS)).isEqualTo(3000)
-        assertThat(properties.priceOf(PlanTier.PRO)).isEqualTo(10000)
+        assertThat(properties.priceOf(PlanTier.PLUS)).isEqualTo(3900)
+        assertThat(properties.priceOf(PlanTier.PRO)).isEqualTo(9900)
     }
 
     @Test

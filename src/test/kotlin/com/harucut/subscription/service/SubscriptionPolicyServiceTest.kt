@@ -112,36 +112,45 @@ class SubscriptionPolicyServiceTest {
     inner class AssertFrameRetentionLimit {
 
         @Test
-        @DisplayName("BASIC 동시 보관 cap(1) 미만이면 통과한다")
+        @DisplayName("PLUS 동시 보관 cap(3) 미만이면 통과한다")
         fun underCap() {
             val u = user()
-            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PLUS)
 
-            service.assertFrameRetentionLimit(u, 0)
+            service.assertFrameRetentionLimit(u, 2)
         }
 
         @Test
-        @DisplayName("BASIC 동시 보관 cap(1)에 도달하면 PLAN_FRAME_RETENTION_EXCEEDED 예외를 던진다")
+        @DisplayName("PLUS 동시 보관 cap(3)에 도달하면 PLAN_FRAME_RETENTION_EXCEEDED 예외를 던진다")
         fun atCap() {
             val u = user()
-            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PLUS)
 
-            assertThatThrownBy { service.assertFrameRetentionLimit(u, 1) }
+            assertThatThrownBy { service.assertFrameRetentionLimit(u, 3) }
                 .isInstanceOf(BusinessException::class.java)
                 .extracting("errorCode")
                 .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
         }
 
         @Test
-        @DisplayName("PRO도 동시 보관 cap(10)을 초과하면 예외를 던진다")
-        fun proAtCap() {
+        @DisplayName("BASIC은 cap(0)이라 보관 프레임이 없어도 예외를 던진다")
+        fun basicAlwaysBlocked() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+
+            assertThatThrownBy { service.assertFrameRetentionLimit(u, 0) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+        }
+
+        @Test
+        @DisplayName("PRO(무제한)는 개수와 무관하게 통과한다")
+        fun proUnlimited() {
             val u = user()
             every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PRO)
 
-            assertThatThrownBy { service.assertFrameRetentionLimit(u, 10) }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+            service.assertFrameRetentionLimit(u, 100)
         }
 
         @Test
@@ -156,6 +165,37 @@ class SubscriptionPolicyServiceTest {
                 .isEqualTo(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
 
             verify(exactly = 0) { userSubscriptionRepository.save(any()) }
+        }
+    }
+
+    @Nested
+    inner class ResolveFrameRetentionCap {
+
+        @Test
+        @DisplayName("유한 cap 요금제는 cap 개수를 반환한다")
+        fun limited() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PLUS)
+
+            assertThat(service.resolveFrameRetentionCap(u)).isEqualTo(3)
+        }
+
+        @Test
+        @DisplayName("BASIC은 cap 0을 반환한다")
+        fun basicZero() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.BASIC)
+
+            assertThat(service.resolveFrameRetentionCap(u)).isEqualTo(0)
+        }
+
+        @Test
+        @DisplayName("무제한 요금제는 null을 반환한다")
+        fun unlimited() {
+            val u = user()
+            every { userSubscriptionRepository.findByUserId(1L) } returns subscription(PlanTier.PRO)
+
+            assertThat(service.resolveFrameRetentionCap(u)).isNull()
         }
     }
 

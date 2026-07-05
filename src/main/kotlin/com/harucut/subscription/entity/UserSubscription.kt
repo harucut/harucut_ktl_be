@@ -33,6 +33,11 @@ class UserSubscription(
     var version: Long = 0
         protected set
 
+    // 요금제 단계 변경 (업/다운그레이드)
+    fun changePlan(tier: PlanTier) {
+        this.planTier = tier
+    }
+
     companion object {
         fun createDefault(user: User): UserSubscription = UserSubscription(user = user)
     }

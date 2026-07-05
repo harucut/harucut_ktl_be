@@ -32,23 +32,23 @@ class SubscriptionUsageServiceTest {
     inner class GetUsage {
 
         @Test
-        @DisplayName("BASIC: 프레임 보관 한도·사용량·잔여를 계산한다")
-        fun basic() {
+        @DisplayName("PLUS: 프레임 보관 한도·사용량·잔여를 계산한다")
+        fun plus() {
             val user = userMock()
-            every { userSubscriptionRepository.findByUserId(1L) } returns subMock(PlanTier.BASIC)
+            every { userSubscriptionRepository.findByUserId(1L) } returns subMock(PlanTier.PLUS)
             every { frameRepository.countByUser(user) } returns 1L
 
             val usage = service.getUsage(user)
 
-            assertThat(usage.planTier).isEqualTo(PlanTier.BASIC)
-            assertThat(usage.frameRetentionLimit).isEqualTo(1)
+            assertThat(usage.planTier).isEqualTo(PlanTier.PLUS)
+            assertThat(usage.frameRetentionLimit).isEqualTo(3)
             assertThat(usage.frameRetentionUsed).isEqualTo(1)
-            assertThat(usage.frameRetentionRemaining).isEqualTo(0)
+            assertThat(usage.frameRetentionRemaining).isEqualTo(2)
             assertThat(usage.frameRetentionUnlimited).isFalse()
         }
 
         @Test
-        @DisplayName("PRO: 프레임 보관 cap(10)과 사용량을 정확히 계산한다")
+        @DisplayName("PRO: 프레임 보관 무제한(-1)으로 계산한다")
         fun pro() {
             val user = userMock()
             every { userSubscriptionRepository.findByUserId(1L) } returns subMock(PlanTier.PRO)
@@ -56,8 +56,9 @@ class SubscriptionUsageServiceTest {
 
             val usage = service.getUsage(user)
 
-            assertThat(usage.frameRetentionLimit).isEqualTo(10)
-            assertThat(usage.frameRetentionRemaining).isEqualTo(7)
+            assertThat(usage.frameRetentionLimit).isEqualTo(-1)
+            assertThat(usage.frameRetentionRemaining).isEqualTo(-1)
+            assertThat(usage.frameRetentionUnlimited).isTrue()
         }
 
         @Test
