@@ -4,19 +4,19 @@ enum class PlanTier(val policy: PlanPolicy) {
 
     BASIC(
         PlanPolicy(
-            frameRetentionLimit = Limit.Limited(1),
+            frameRetentionLimit = Limit.Limited(0),
             historyRetention = Retention.Days(3)
         )
     ),
     PLUS(
         PlanPolicy(
-            frameRetentionLimit = Limit.Limited(5),
-            historyRetention = Retention.Unlimited
+            frameRetentionLimit = Limit.Limited(3),
+            historyRetention = Retention.Months(3)
         )
     ),
     PRO(
         PlanPolicy(
-            frameRetentionLimit = Limit.Limited(10),
+            frameRetentionLimit = Limit.Unlimited,
             historyRetention = Retention.Unlimited
         )
     );

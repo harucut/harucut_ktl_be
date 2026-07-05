@@ -33,6 +33,11 @@ class SubscriptionPolicyService(
         }
     }
 
+    override fun resolveFrameRetentionCap(user: User): Int? {
+        val limit = resolvePolicy(user).frameRetentionLimit
+        return if (limit.isUnlimited) null else limit.maxOrUnlimited()
+    }
+
     private fun resolvePolicy(user: User): PlanPolicy {
         val userId = user.id ?: return PlanTier.DEFAULT.policy
         return (userSubscriptionRepository.findByUserId(userId)?.planTier ?: PlanTier.DEFAULT).policy

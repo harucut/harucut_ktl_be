@@ -14,6 +14,7 @@ import com.harucut.frame.enums.BackgroundType
 import com.harucut.frame.enums.ComponentType
 import com.harucut.frame.policy.FrameSubscriptionPolicy
 import com.harucut.frame.repository.FrameRepository
+import com.harucut.subscription.exception.SubscriptionErrorCode
 import com.harucut.user.entity.User
 import com.harucut.user.repository.UserRepository
 import org.springframework.stereotype.Service
@@ -55,9 +56,11 @@ class FrameServiceImpl(
     override fun getMyFrames(userId: Long): List<FrameResponse> {
         val user = getUserById(userId)
         val cutoff = frameSubscriptionPolicy.resolveHistoryCutoff(user)
+        val cap = frameSubscriptionPolicy.resolveFrameRetentionCap(user)
 
         return frameRepository.findAllByUserOrderByCreatedAtDesc(user)
             .filter { isWithinHistoryWindow(it.createdAt, cutoff) }
+            .let { if (cap != null) it.take(cap) else it }
             .map { toFrameResponse(it) }
     }
 
@@ -66,6 +69,7 @@ class FrameServiceImpl(
         val frame = findFrameById(frameId)
         validateOwner(frame, userId)
         frameSubscriptionPolicy.assertHistoryAccessible(frame.user, frame.createdAt)
+        assertWithinRetentionCap(frame)
         return toFrameResponse(frame)
     }
 
@@ -126,6 +130,15 @@ class FrameServiceImpl(
 
     private fun validateOwner(frame: Frame, userId: Long) {
         if (frame.user.id != userId) throw BusinessException(GlobalErrorCode.FORBIDDEN, "권한이 없습니다.")
+    }
+
+    // 소프트 캡 판정: 자기보다 최신인 프레임 수가 cap 이상이면 접근 차단
+    private fun assertWithinRetentionCap(frame: Frame) {
+        val cap = frameSubscriptionPolicy.resolveFrameRetentionCap(frame.user) ?: return
+        val createdAt = frame.createdAt ?: return
+        if (frameRepository.countByUserAndCreatedAtAfter(frame.user, createdAt) >= cap) {
+            throw BusinessException(SubscriptionErrorCode.PLAN_FRAME_RETENTION_EXCEEDED)
+        }
     }
 
     private fun createComponents(

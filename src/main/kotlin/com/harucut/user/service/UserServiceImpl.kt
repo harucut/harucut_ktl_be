@@ -4,6 +4,7 @@ import com.harucut.exception.BusinessException
 import com.harucut.exception.GlobalErrorCode
 import com.harucut.storage.service.FileStorageService
 import com.harucut.storage.util.normalizeToS3Key
+import com.harucut.subscription.entity.UserSubscription
 import com.harucut.subscription.plan.PlanTier
 import com.harucut.subscription.repository.UserSubscriptionRepository
 import com.harucut.subscription.usage.SubscriptionUsageService
@@ -60,6 +61,14 @@ class UserServiceImpl(
     override fun changeProfileImage(userId: Long, s3Key: String) {
         val user = getUserById(userId)
         user.changeProfileImageUrl(normalizeToS3Key(s3Key))
+    }
+
+    // 요금제 변경 (구독이 없으면 기본 구독 생성 후 변경)
+    override fun changePlan(userId: Long, planTier: PlanTier) {
+        val user = getUserById(userId)
+        val subscription = userSubscriptionRepository.findByUserId(userId)
+            ?: userSubscriptionRepository.save(UserSubscription.createDefault(user))
+        subscription.changePlan(planTier)
     }
 
     // ── helpers ──────────────────────────────

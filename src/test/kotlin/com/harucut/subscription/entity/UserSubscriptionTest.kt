@@ -23,4 +23,18 @@ class UserSubscriptionTest {
             assertThat(sub.planTier).isEqualTo(PlanTier.BASIC)
         }
     }
+
+    @Nested
+    inner class ChangePlan {
+
+        @Test
+        @DisplayName("요금제 단계를 변경한다")
+        fun success() {
+            val sub = UserSubscription.createDefault(user())
+
+            sub.changePlan(PlanTier.PRO)
+
+            assertThat(sub.planTier).isEqualTo(PlanTier.PRO)
+        }
+    }
 }
