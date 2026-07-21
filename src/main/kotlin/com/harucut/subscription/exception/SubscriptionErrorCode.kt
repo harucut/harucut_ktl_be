@@ -19,4 +19,14 @@ enum class SubscriptionErrorCode(
         HttpStatus.FORBIDDEN,
         "The number of stored frames exceeds the limit for the current plan."
     ),
+    NO_ACTIVE_SUBSCRIPTION(
+        "SUBS-004",
+        HttpStatus.NOT_FOUND,
+        "No active subscription found."
+    ),
+    ALREADY_CANCELED(
+        "SUBS-005",
+        HttpStatus.CONFLICT,
+        "The subscription's auto-renewal is already canceled."
+    ),
 }

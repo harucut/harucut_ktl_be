@@ -12,13 +12,15 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Clock
 
 class SubscriptionUsageServiceTest {
 
     private val userSubscriptionRepository = mockk<UserSubscriptionRepository>()
     private val frameRepository = mockk<FrameRepository>()
+    private val clock = Clock.systemDefaultZone()
 
-    private val service = SubscriptionUsageService(userSubscriptionRepository, frameRepository)
+    private val service = SubscriptionUsageService(userSubscriptionRepository, frameRepository, clock)
 
     private fun userMock(id: Long = 1L): User = mockk(relaxed = true) {
         every { this@mockk.id } returns id
@@ -26,6 +28,7 @@ class SubscriptionUsageServiceTest {
 
     private fun subMock(tier: PlanTier): UserSubscription = mockk(relaxed = true) {
         every { planTier } returns tier
+        every { effectiveTier(any()) } returns tier
     }
 
     @Nested

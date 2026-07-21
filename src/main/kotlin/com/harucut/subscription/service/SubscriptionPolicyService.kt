@@ -9,11 +9,13 @@ import com.harucut.subscription.plan.PlanTier
 import com.harucut.subscription.repository.UserSubscriptionRepository
 import com.harucut.user.entity.User
 import org.springframework.stereotype.Service
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
 class SubscriptionPolicyService(
-    private val userSubscriptionRepository: UserSubscriptionRepository
+    private val userSubscriptionRepository: UserSubscriptionRepository,
+    private val clock: Clock
 ) : MediaSubscriptionPolicy, FrameSubscriptionPolicy {
 
     override fun resolveHistoryCutoff(user: User): LocalDateTime? =
@@ -40,6 +42,7 @@ class SubscriptionPolicyService(
 
     private fun resolvePolicy(user: User): PlanPolicy {
         val userId = user.id ?: return PlanTier.DEFAULT.policy
-        return (userSubscriptionRepository.findByUserId(userId)?.planTier ?: PlanTier.DEFAULT).policy
+        val subscription = userSubscriptionRepository.findByUserId(userId) ?: return PlanTier.DEFAULT.policy
+        return subscription.effectiveTier(LocalDateTime.now(clock)).policy
     }
 }

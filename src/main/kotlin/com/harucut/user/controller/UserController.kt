@@ -1,7 +1,6 @@
 package com.harucut.user.controller
 
 import com.harucut.auth.security.CustomUserPrincipal
-import com.harucut.user.dto.ChangePlanRequest
 import com.harucut.user.dto.ChangeProfileImageRequest
 import com.harucut.user.dto.SubscriptionUsageResponse
 import com.harucut.user.dto.UserInfoResponse
@@ -61,26 +60,6 @@ class UserController(
     ): ResponseEntity<Response<SubscriptionUsageResponse>> {
         val response = userService.getSubscriptionUsage(principal.id!!)
         return Response.ok(response).toResponseEntity()
-    }
-
-    // 요금제 변경
-    @Operation(
-        summary = "요금제 변경",
-        description = "로그인한 사용자의 요금제 단계를 변경합니다. 결제 연동 전 임시 진입점입니다."
-    )
-    @ApiResponses(
-        ApiResponse(responseCode = "200", description = "변경 성공"),
-        ApiResponse(responseCode = "400", description = "검증 실패"),
-        ApiResponse(responseCode = "401", description = "인증 필요"),
-        ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
-    )
-    @PatchMapping("/subscription/plan")
-    fun changePlan(
-        @Parameter(hidden = true) @AuthenticationPrincipal principal: CustomUserPrincipal,
-        @RequestBody @Valid request: ChangePlanRequest
-    ): ResponseEntity<Response<Unit>> {
-        userService.changePlan(principal.id!!, request.planTier)
-        return Response.ok().toResponseEntity()
     }
 
     // 닉네임 변경

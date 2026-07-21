@@ -2,6 +2,11 @@
 # 공통 설정(OAuth2/JWT/Mail/Redis/Cookie/AWS)은 application.yaml 참조.
 # 리버스 프록시(nginx) 뒤에서 {baseUrl} 이 https 공개주소로 해석되도록 forward-headers 활성화.
 spring:
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+
   datasource:
     url: jdbc:mysql://${DB_HOST}:${DB_PORT:3306}/${DB_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     driver-class-name: com.mysql.cj.jdbc.Driver

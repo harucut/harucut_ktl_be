@@ -1,10 +1,8 @@
 package com.harucut.user.dto
 
-import com.harucut.subscription.plan.PlanTier
 import com.harucut.subscription.usage.SubscriptionUsage
 import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 
 @Schema(description = "사용자 정보 조회 응답")
 data class UserInfoResponse(
@@ -54,11 +52,4 @@ data class ChangeProfileImageRequest(
     @field:NotBlank(message = "S3 Key는 필수입니다.")
     @Schema(description = "S3에 업로드된 프로필 이미지 파일의 Key", example = "uploads/users/AbCdEf12Gh/profile/123.jpg")
     val s3Key: String
-)
-
-@Schema(description = "요금제 변경 요청")
-data class ChangePlanRequest(
-    @field:NotNull(message = "요금제 단계는 필수입니다.")
-    @Schema(description = "변경할 요금제 단계", example = "PLUS")
-    val planTier: PlanTier
 )

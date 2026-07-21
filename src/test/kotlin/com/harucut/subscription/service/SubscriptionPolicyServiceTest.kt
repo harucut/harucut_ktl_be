@@ -14,18 +14,21 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Clock
 import java.time.LocalDateTime
 
 class SubscriptionPolicyServiceTest {
 
     private val userSubscriptionRepository = mockk<UserSubscriptionRepository>()
-    private val service = SubscriptionPolicyService(userSubscriptionRepository)
+    private val clock = Clock.systemDefaultZone()
+    private val service = SubscriptionPolicyService(userSubscriptionRepository, clock)
 
     private fun user(id: Long? = 1L): User = mockk<User>(relaxed = true).also { every { it.id } returns id }
 
     private fun subscription(tier: PlanTier): UserSubscription =
         mockk<UserSubscription>(relaxed = true).also {
             every { it.planTier } returns tier
+            every { it.effectiveTier(any()) } returns tier
         }
 
     @Nested

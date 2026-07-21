@@ -3,7 +3,6 @@ package com.harucut.user.service
 import com.harucut.exception.BusinessException
 import com.harucut.exception.GlobalErrorCode
 import com.harucut.storage.service.FileStorageService
-import com.harucut.subscription.entity.UserSubscription
 import com.harucut.subscription.plan.PlanTier
 import com.harucut.subscription.repository.UserSubscriptionRepository
 import com.harucut.subscription.usage.SubscriptionUsage
@@ -14,13 +13,13 @@ import com.harucut.user.enums.Provider
 import com.harucut.user.repository.UserRepository
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import java.time.Clock
 import java.util.Optional
 
 class UserServiceTest {
@@ -30,9 +29,10 @@ class UserServiceTest {
     private val fileStorageService = mockk<FileStorageService>()
     private val subscriptionUsageService = mockk<SubscriptionUsageService>()
     private val planPricingProperties = PlanPricingProperties()
+    private val clock = Clock.systemDefaultZone()
 
     private val service = UserServiceImpl(
-        userRepository, userSubscriptionRepository, fileStorageService, subscriptionUsageService, planPricingProperties
+        userRepository, userSubscriptionRepository, fileStorageService, subscriptionUsageService, planPricingProperties, clock
     )
 
     private fun userMock(id: Long = 1L): User = mockk(relaxed = true) {
@@ -52,7 +52,7 @@ class UserServiceTest {
             val user = userMock(1L)
             every { userRepository.findById(1L) } returns Optional.of(user)
             every { userSubscriptionRepository.findByUserId(1L) } returns
-                mockk(relaxed = true) { every { planTier } returns PlanTier.PLUS }
+                mockk(relaxed = true) { every { effectiveTier(any()) } returns PlanTier.PLUS }
             every { fileStorageService.generatePresignedGetUrl("uploads/users/pub/profile/a.png") } returns "https://profile"
 
             val res = service.getUserInfo(1L)
@@ -119,49 +119,6 @@ class UserServiceTest {
             every { userRepository.findById(1L) } returns Optional.empty()
 
             assertThatThrownBy { service.getSubscriptionUsage(1L) }
-                .isInstanceOf(BusinessException::class.java)
-                .extracting("errorCode")
-                .isEqualTo(GlobalErrorCode.NOT_FOUND)
-        }
-    }
-
-    @Nested
-    inner class ChangePlan {
-
-        @Test
-        @DisplayName("기존 구독의 요금제를 변경한다")
-        fun success() {
-            val user = userMock(1L)
-            val subscription = UserSubscription.createDefault(user)
-            every { userRepository.findById(1L) } returns Optional.of(user)
-            every { userSubscriptionRepository.findByUserId(1L) } returns subscription
-
-            service.changePlan(1L, PlanTier.PRO)
-
-            assertThat(subscription.planTier).isEqualTo(PlanTier.PRO)
-            verify(exactly = 0) { userSubscriptionRepository.save(any()) }
-        }
-
-        @Test
-        @DisplayName("구독이 없으면 기본 구독을 생성한 뒤 요금제를 변경한다")
-        fun createsDefaultWhenMissing() {
-            val user = userMock(1L)
-            every { userRepository.findById(1L) } returns Optional.of(user)
-            every { userSubscriptionRepository.findByUserId(1L) } returns null
-            val saved = slot<UserSubscription>()
-            every { userSubscriptionRepository.save(capture(saved)) } answers { saved.captured }
-
-            service.changePlan(1L, PlanTier.PLUS)
-
-            assertThat(saved.captured.planTier).isEqualTo(PlanTier.PLUS)
-        }
-
-        @Test
-        @DisplayName("사용자가 없으면 NOT_FOUND 예외를 던진다")
-        fun notFound() {
-            every { userRepository.findById(1L) } returns Optional.empty()
-
-            assertThatThrownBy { service.changePlan(1L, PlanTier.PLUS) }
                 .isInstanceOf(BusinessException::class.java)
                 .extracting("errorCode")
                 .isEqualTo(GlobalErrorCode.NOT_FOUND)
