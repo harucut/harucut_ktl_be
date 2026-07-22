@@ -4,7 +4,6 @@ import com.harucut.exception.BusinessException
 import com.harucut.exception.GlobalErrorCode
 import com.harucut.storage.service.FileStorageService
 import com.harucut.storage.util.normalizeToS3Key
-import com.harucut.subscription.entity.UserSubscription
 import com.harucut.subscription.plan.PlanTier
 import com.harucut.subscription.repository.UserSubscriptionRepository
 import com.harucut.subscription.usage.SubscriptionUsageService
@@ -15,6 +14,8 @@ import com.harucut.user.entity.User
 import com.harucut.user.repository.UserRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -23,7 +24,8 @@ class UserServiceImpl(
     private val userSubscriptionRepository: UserSubscriptionRepository,
     private val fileStorageService: FileStorageService,
     private val subscriptionUsageService: SubscriptionUsageService,
-    private val planPricingProperties: PlanPricingProperties
+    private val planPricingProperties: PlanPricingProperties,
+    private val clock: Clock
 ) : UserService {
 
     // 내 정보 조회 (프로필 presigned URL + 요금제/가격 부착)
@@ -63,14 +65,6 @@ class UserServiceImpl(
         user.changeProfileImageUrl(normalizeToS3Key(s3Key))
     }
 
-    // 요금제 변경 (구독이 없으면 기본 구독 생성 후 변경)
-    override fun changePlan(userId: Long, planTier: PlanTier) {
-        val user = getUserById(userId)
-        val subscription = userSubscriptionRepository.findByUserId(userId)
-            ?: userSubscriptionRepository.save(UserSubscription.createDefault(user))
-        subscription.changePlan(planTier)
-    }
-
     // ── helpers ──────────────────────────────
 
     // userId로 사용자 조회 (없으면 예외)
@@ -78,7 +72,7 @@ class UserServiceImpl(
         userRepository.findById(userId)
             .orElseThrow { BusinessException(GlobalErrorCode.NOT_FOUND, "User not found.") }
 
-    // 구독의 요금제 단계 (없으면 기본 요금제)
+    // 구독의 실질 요금제 (없으면 기본 요금제). 정책/사용량과 동일하게 effectiveTier 기준으로 표시한다.
     private fun resolvePlanTier(userId: Long): PlanTier =
-        userSubscriptionRepository.findByUserId(userId)?.planTier ?: PlanTier.DEFAULT
+        userSubscriptionRepository.findByUserId(userId)?.effectiveTier(LocalDateTime.now(clock)) ?: PlanTier.DEFAULT
 }
