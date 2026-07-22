@@ -10,6 +10,7 @@ import com.harucut.auth.security.handler.CustomOAuth2SuccessHandler
 import com.harucut.auth.security.service.CustomUserDetailsService
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
@@ -99,6 +100,7 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(*PUBLIC_PATHS).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/notices/**").permitAll()
                     .anyRequest().authenticated()
             }
 
