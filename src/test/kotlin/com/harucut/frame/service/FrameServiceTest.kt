@@ -6,6 +6,7 @@ import com.harucut.frame.attributes.BackgroundAttributes
 import com.harucut.frame.attributes.ColorBackgroundAttributes
 import com.harucut.frame.attributes.ImageBackgroundAttributes
 import com.harucut.frame.component.FrameAssetManager
+import com.harucut.frame.component.FrameComponentAssembler
 import com.harucut.frame.converter.FrameStyleConverter
 import com.harucut.frame.dto.FrameCreateRequest
 import com.harucut.frame.entity.Frame
@@ -40,9 +41,10 @@ class FrameServiceTest {
     private val frameAssetManager = mockk<FrameAssetManager>()
     private val frameStyleConverter = mockk<FrameStyleConverter>(relaxed = true)
     private val frameSubscriptionPolicy = mockk<FrameSubscriptionPolicy>()
+    private val frameComponentAssembler = FrameComponentAssembler(frameAssetManager, frameStyleConverter)
 
     private val service = FrameServiceImpl(
-        frameRepository, userRepository, frameAssetManager, frameStyleConverter, frameSubscriptionPolicy
+        frameRepository, userRepository, frameAssetManager, frameSubscriptionPolicy, frameComponentAssembler
     )
 
     private fun userMock(id: Long = 1L): User =
@@ -74,6 +76,23 @@ class FrameServiceTest {
         val field = BaseEntity::class.java.getDeclaredField("createdAt")
         field.isAccessible = true
         field.set(entity, time)
+    }
+
+    private fun systemFrame(
+        title: String,
+        previewKey: String = "uploads/system/preview.png",
+        background: BackgroundAttributes = ColorBackgroundAttributes("#ffffff"),
+        createdAt: LocalDateTime? = null
+    ): Frame {
+        val f = Frame.system(
+            title = title,
+            description = "desc",
+            previewKey = previewKey,
+            frameType = FrameType.CLASSIC,
+            background = background
+        )
+        if (createdAt != null) setCreatedAt(f, createdAt)
+        return f
     }
 
     @Nested
@@ -172,6 +191,7 @@ class FrameServiceTest {
             val recent = frame(user, title = "recent")
             val old = frame(user, title = "old", createdAt = LocalDateTime.now().minusDays(10))
             every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(recent, old)
+            every { frameRepository.findAllByIsSystemTrueOrderByCreatedAtDesc() } returns emptyList()
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
 
             val result = service.getMyFrames(1L)
@@ -192,6 +212,7 @@ class FrameServiceTest {
             val a = frame(user, title = "a")
             val b = frame(user, title = "b", createdAt = LocalDateTime.now().minusYears(5))
             every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(a, b)
+            every { frameRepository.findAllByIsSystemTrueOrderByCreatedAtDesc() } returns emptyList()
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
 
             val result = service.getMyFrames(1L)
@@ -210,12 +231,57 @@ class FrameServiceTest {
             val newest = frame(user, title = "newest")
             val older = frame(user, title = "older", createdAt = LocalDateTime.now().minusDays(1))
             every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(newest, older)
+            every { frameRepository.findAllByIsSystemTrueOrderByCreatedAtDesc() } returns emptyList()
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
 
             val result = service.getMyFrames(1L)
 
             assertThat(result).hasSize(1)
             assertThat(result[0].title).isEqualTo("newest")
+        }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임은 사용자 프레임과 함께 항상 목록에 포함되며, 사용자 프레임이 먼저 오고 시스템 프레임이 뒤에 온다")
+        fun includesSystemFrames() {
+            val user = userMock(1L)
+            every { userRepository.findById(1L) } returns Optional.of(user)
+            every { frameSubscriptionPolicy.resolveHistoryCutoff(user) } returns null
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns null
+
+            val mine = frame(user, title = "mine")
+            val system = systemFrame(title = "system-template")
+            every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(mine)
+            every { frameRepository.findAllByIsSystemTrueOrderByCreatedAtDesc() } returns listOf(system)
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = service.getMyFrames(1L)
+
+            assertThat(result).extracting("title").containsExactly("mine", "system-template")
+            assertThat(result).extracting("isSystem").containsExactly(false, true)
+        }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임은 사용자 보관 cutoff/소프트 캡의 영향을 받지 않는다")
+        fun systemFramesBypassCutoffAndCap() {
+            val user = userMock(1L)
+            val cutoff = LocalDateTime.now().minusDays(1)
+            every { userRepository.findById(1L) } returns Optional.of(user)
+            every { frameSubscriptionPolicy.resolveHistoryCutoff(user) } returns cutoff
+            every { frameSubscriptionPolicy.resolveFrameRetentionCap(user) } returns 0
+
+            // 사용자 프레임은 cap=0/cutoff에 의해 전부 걸러진다
+            val expiredUserFrame = frame(user, title = "old", createdAt = LocalDateTime.now().minusDays(10))
+            every { frameRepository.findAllByUserOrderByCreatedAtDesc(user) } returns listOf(expiredUserFrame)
+
+            // 시스템 프레임은 오래됐어도(오래전 생성) 그대로 노출돼야 한다
+            val oldSystemFrame = systemFrame(title = "old-system", createdAt = LocalDateTime.now().minusYears(1))
+            every { frameRepository.findAllByIsSystemTrueOrderByCreatedAtDesc() } returns listOf(oldSystemFrame)
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = service.getMyFrames(1L)
+
+            assertThat(result).hasSize(1)
+            assertThat(result[0].title).isEqualTo("old-system")
         }
     }
 
@@ -236,6 +302,22 @@ class FrameServiceTest {
 
             assertThat(result.title).isEqualTo("내 프레임")
             assertThat(result.source).isEqualTo("preview-url")
+            assertThat(result.isSystem).isFalse()
+        }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임은 소유자·보관 기간 검사 없이 누구나 조회할 수 있다")
+        fun systemFrameBypassesOwnerAndRetentionChecks() {
+            val target = systemFrame(title = "system-template", createdAt = LocalDateTime.now().minusYears(1))
+            every { frameRepository.findById(10L) } returns Optional.of(target)
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = service.getFrame(10L, 999L)
+
+            assertThat(result.title).isEqualTo("system-template")
+            assertThat(result.isSystem).isTrue()
+            verify(exactly = 0) { frameSubscriptionPolicy.assertHistoryAccessible(any(), any()) }
+            verify(exactly = 0) { frameRepository.countByUserAndCreatedAtAfter(any(), any()) }
         }
 
         @Test
@@ -343,6 +425,20 @@ class FrameServiceTest {
 
             verify(exactly = 0) { frameRepository.delete(any()) }
         }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임은 사용자 삭제 API로 삭제할 수 없다(FORBIDDEN)")
+        fun forbiddenForSystemFrame() {
+            val target = systemFrame(title = "system-template")
+            every { frameRepository.findById(10L) } returns Optional.of(target)
+
+            assertThatThrownBy { service.deleteFrame(1L, 10L) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(GlobalErrorCode.FORBIDDEN)
+
+            verify(exactly = 0) { frameRepository.delete(any()) }
+        }
     }
 
     @Nested
@@ -399,6 +495,27 @@ class FrameServiceTest {
         fun forbidden() {
             val owner = userMock(2L)
             val target = frame(owner)
+            every { frameRepository.findById(10L) } returns Optional.of(target)
+
+            val request = FrameCreateRequest(
+                title = "t",
+                description = null,
+                previewKey = "p",
+                frameType = FrameType.CLASSIC,
+                background = ColorBackgroundAttributes("#fff"),
+                components = null
+            )
+
+            assertThatThrownBy { service.updateFrame(1L, 10L, request) }
+                .isInstanceOf(BusinessException::class.java)
+                .extracting("errorCode")
+                .isEqualTo(GlobalErrorCode.FORBIDDEN)
+        }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임은 사용자 수정 API로 수정할 수 없다(FORBIDDEN)")
+        fun forbiddenForSystemFrame() {
+            val target = systemFrame(title = "system-template")
             every { frameRepository.findById(10L) } returns Optional.of(target)
 
             val request = FrameCreateRequest(

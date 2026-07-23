@@ -28,10 +28,20 @@ class Frame(
     @Column(columnDefinition = "json", nullable = false)
     var background: BackgroundAttributes,
 
+    // 시스템 프레임은 오너가 없다 (isSystem=true ⇔ user=null)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    val user: User
+    @JoinColumn(name = "user_id", nullable = true)
+    val user: User?,
+
+    @Column(name = "is_system", nullable = false)
+    val isSystem: Boolean = false
 ) : BaseEntity() {
+
+    init {
+        require(isSystem == (user == null)) {
+            "시스템 프레임은 user가 없어야 하고, 사용자 프레임은 user가 있어야 합니다."
+        }
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,5 +68,24 @@ class Frame(
         this.description = description
         this.background = background
         this.previewKey = previewKey
+    }
+
+    companion object {
+        // 오너 없는 시스템(기본 제공) 프레임 생성 팩토리
+        fun system(
+            title: String,
+            description: String,
+            previewKey: String,
+            frameType: FrameType,
+            background: BackgroundAttributes
+        ): Frame = Frame(
+            title = title,
+            description = description,
+            previewKey = previewKey,
+            frameType = frameType,
+            background = background,
+            user = null,
+            isSystem = true
+        )
     }
 }
