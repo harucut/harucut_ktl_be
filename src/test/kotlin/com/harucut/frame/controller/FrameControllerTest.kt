@@ -72,7 +72,8 @@ class FrameControllerTest : SecurityBeansMockSupport() {
         source = "https://preview",
         frameType = FrameType.CLASSIC,
         background = ColorBackgroundAttributes("#ffffff"),
-        components = emptyList()
+        components = emptyList(),
+        isSystem = false
     )
 
     @Nested
@@ -140,6 +141,7 @@ class FrameControllerTest : SecurityBeansMockSupport() {
                 status { isOk() }
                 jsonPath("$.data[0].frameId") { value(1) }
                 jsonPath("$.data[0].background.type") { value("COLOR") }
+                jsonPath("$.data[0].isSystem") { value(false) }
             }
         }
     }
