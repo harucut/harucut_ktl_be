@@ -16,6 +16,9 @@ interface FrameRepository : JpaRepository<Frame, Long> {
     // 사용자가 현재 보관 중인 프레임 개수 (동시 보관 cap 판정용)
     fun countByUser(user: User): Long
 
+    // 시스템(기본 제공) 프레임 전체 조회 (최신순) — retention cutoff/소프트 캡 미적용
+    fun findAllByIsSystemTrueOrderByCreatedAtDesc(): List<Frame>
+
     // 기준 시각보다 최신인 프레임 개수 (단건 조회 시 소프트 캡 판정용)
     fun countByUserAndCreatedAtAfter(user: User, createdAt: LocalDateTime): Long
 

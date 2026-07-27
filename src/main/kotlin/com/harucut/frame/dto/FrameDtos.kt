@@ -72,7 +72,8 @@ data class FrameResponse(
     @Schema(description = "프레임 소스(프리뷰 URL)", example = "https://.../frame-1.png") val source: String?,
     @Schema(description = "프레임 타입", example = "CLASSIC") val frameType: FrameType,
     @Schema(description = "배경 속성") val background: BackgroundAttributes,
-    @Schema(description = "컴포넌트 목록") val components: List<ComponentResponse>
+    @Schema(description = "컴포넌트 목록") val components: List<ComponentResponse>,
+    @Schema(description = "기본 제공(시스템) 프레임 여부", example = "false") val isSystem: Boolean
 ) {
     @Schema(description = "프레임 컴포넌트 응답 DTO")
     data class ComponentResponse(
