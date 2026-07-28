@@ -41,26 +41,27 @@ class SubscriptionExpirationSchedulerTest {
             every { userSubscriptionRepository.findExpirableIds(SubscriptionStatus.CANCELED, now) } returns listOf(1L)
             every { userSubscriptionRepository.findExpirableIds(SubscriptionStatus.PAST_DUE, graceCutoff) } returns listOf(2L)
             every { userSubscriptionRepository.findExpirableIds(SubscriptionStatus.GRANTED, now) } returns listOf(3L)
-            every { batchService.expireInNewTransaction(any()) } just runs
+            every { batchService.expireInNewTransaction(any(), any()) } just runs
 
             scheduler.run()
 
-            verify { batchService.expireInNewTransaction(1L) }
-            verify { batchService.expireInNewTransaction(2L) }
-            verify { batchService.expireInNewTransaction(3L) }
+            verify { batchService.expireInNewTransaction(1L, now) }
+            verify { batchService.expireInNewTransaction(2L, now) }
+            verify { batchService.expireInNewTransaction(3L, now) }
         }
 
         @Test
         @DisplayName("한 구독 처리 중 예외가 발생해도 나머지 구독은 계속 처리한다")
         fun continuesOnError() {
+            val now = LocalDateTime.now(fixedClock)
             every { userSubscriptionRepository.findExpirableIds(any(), any()) } returns listOf(1L, 2L, 3L)
-            every { batchService.expireInNewTransaction(any()) } just runs
-            every { batchService.expireInNewTransaction(2L) } throws RuntimeException("만료 실패")
+            every { batchService.expireInNewTransaction(any(), any()) } just runs
+            every { batchService.expireInNewTransaction(2L, any()) } throws RuntimeException("만료 실패")
 
             assertThatCode { scheduler.run() }.doesNotThrowAnyException()
 
-            verify { batchService.expireInNewTransaction(1L) }
-            verify { batchService.expireInNewTransaction(3L) }
+            verify { batchService.expireInNewTransaction(1L, now) }
+            verify { batchService.expireInNewTransaction(3L, now) }
         }
 
         @Test
@@ -70,7 +71,7 @@ class SubscriptionExpirationSchedulerTest {
 
             scheduler.run()
 
-            verify(exactly = 0) { batchService.expireInNewTransaction(any()) }
+            verify(exactly = 0) { batchService.expireInNewTransaction(any(), any()) }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.harucut.payment.batch.service
 
+import com.harucut.coupon.service.GrantActivationService
 import com.harucut.payment.entity.Payment
 import com.harucut.payment.enums.OrderType
 import com.harucut.payment.enums.PaymentMethod
@@ -24,13 +25,15 @@ class SubscriptionRenewalTransactionService(
     private val userSubscriptionRepository: UserSubscriptionRepository,
     private val paymentOrderRepository: PaymentOrderRepository,
     private val paymentRepository: PaymentRepository,
-    private val planPricingProperties: PlanPricingProperties
+    private val planPricingProperties: PlanPricingProperties,
+    private val grantActivationService: GrantActivationService
 ) {
 
     sealed class RenewalPreparation {
         object NotFound : RenewalPreparation()
         object NoBillingKey : RenewalPreparation()
         object AlreadyProcessed : RenewalPreparation()
+        object GrantActivated : RenewalPreparation()
         data class Created(
             val orderId: Long,
             val orderPublicId: String,
@@ -46,6 +49,12 @@ class SubscriptionRenewalTransactionService(
     fun prepareRenewalOrderInNewTransaction(subscriptionId: Long, now: LocalDateTime): RenewalPreparation {
         val subscription = userSubscriptionRepository.findById(subscriptionId).orElse(null)
             ?: return RenewalPreparation.NotFound
+
+        // 무료 grant 예약이 있으면 이번 주기 청구 대신 예약된 grant로 전환한다(자동갱신 유료 사용자가 쿠폰을 쓴 경우).
+        if (subscription.reservedGrantCouponId != null) {
+            grantActivationService.activate(subscription, now)
+            return RenewalPreparation.GrantActivated
+        }
 
         val billingKey = subscription.billingKey ?: run {
             subscription.markPastDue()
