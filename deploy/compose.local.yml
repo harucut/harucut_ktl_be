@@ -1,3 +1,6 @@
+# 프로젝트명 고정 (compose 파일이 deploy/ 하위라 기본값이 폴더명 'deploy'가 되는 것을 방지)
+name: harucut_be
+
 services:
   redis:
     image: redis:7-alpine
