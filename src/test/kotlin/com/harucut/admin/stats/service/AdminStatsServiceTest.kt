@@ -183,6 +183,7 @@ class AdminStatsServiceTest {
             every { userSubscriptionRepository.countByStatus(SubscriptionStatus.CANCELED) } returns 1
             every { userSubscriptionRepository.countByStatus(SubscriptionStatus.PAST_DUE) } returns 1
             every { userSubscriptionRepository.countByStatus(SubscriptionStatus.EXPIRED) } returns 3
+            every { userSubscriptionRepository.countByStatus(SubscriptionStatus.GRANTED) } returns 0
             every { userSubscriptionRepository.countByAutoRenew(true) } returns 6
             every { userSubscriptionRepository.countByAutoRenew(false) } returns 6
 
