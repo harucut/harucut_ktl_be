@@ -46,9 +46,12 @@ out/
 local.properties
 
 ### Environment variables ###
-.env
-.env.staging
-.env.prod
+# 루트 셀렉터(호스트별, COMPOSE_FILE 지정)
+/.env
+# 실제 시크릿(호스트별) — deploy/env/*.example 템플릿만 추적
+deploy/env/.env.local
+deploy/env/.env.staging
+deploy/env/.env.prod
 
 ### Claude ###
 CLAUDE.md
