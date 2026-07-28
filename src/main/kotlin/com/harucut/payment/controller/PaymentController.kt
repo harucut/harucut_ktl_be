@@ -29,7 +29,9 @@ class PaymentController(
 
     @Operation(
         summary = "구독 결제",
-        description = "빌링키를 발급하고 최초 결제에 성공하면 요청한 요금제로 구독을 활성화합니다."
+        description = "빌링키를 발급하고 최초 결제에 성공하면 요청한 요금제로 구독을 활성화합니다. " +
+            "실 PG 연동 전(mock)에는 customerKey/authKey에 임의 더미 문자열을 넣으면 즉시 활성화됩니다. " +
+            "authKey에 'FAIL'을 포함하면 PG(빌링키 발급) 오류를, customerKey에 'FAIL'을 포함하면 결제(청구) 실패를 시뮬레이션합니다."
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "결제 및 구독 활성화 성공"),

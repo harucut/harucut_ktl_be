@@ -12,10 +12,10 @@ data class SubscribeRequest(
     val planTier: PlanTier,
 
     @field:NotBlank(message = "고객 식별자는 필수입니다.")
-    @Schema(description = "PG 고객 식별자", example = "customer-abc123")
+    @Schema(description = "PG 고객 식별자. mock 환경에서는 임의 문자열 허용('FAIL' 포함 시 결제 실패 시뮬레이션)", example = "customer-abc123")
     val customerKey: String,
 
     @field:NotBlank(message = "인증 키는 필수입니다.")
-    @Schema(description = "카드 등록 인증 후 발급된 authKey", example = "auth-abc123")
+    @Schema(description = "카드 등록 인증 후 발급된 authKey. mock 환경에서는 임의 문자열 허용('FAIL' 포함 시 빌링키 발급 실패 시뮬레이션)", example = "auth-abc123")
     val authKey: String
 )
