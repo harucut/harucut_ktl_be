@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.LocalDateTime
 
-// 해지 예약(CANCELED)이 만료 시점을 지났거나, 연체(PAST_DUE)가 유예기간을 초과한 구독을 BASIC으로 강등한다.
+// 해지 예약(CANCELED)이 만료 시점을 지났거나, 연체(PAST_DUE)가 유예기간을 초과했거나,
+// 무료 grant(GRANTED)의 기간이 끝난 구독을 BASIC으로 강등한다.
 @Component
 class SubscriptionExpirationScheduler(
     private val userSubscriptionRepository: UserSubscriptionRepository,
@@ -27,7 +28,8 @@ class SubscriptionExpirationScheduler(
         val graceCutoff = now.minusDays(paymentProperties.graceDays)
 
         val expirableIds = userSubscriptionRepository.findExpirableIds(SubscriptionStatus.CANCELED, now) +
-            userSubscriptionRepository.findExpirableIds(SubscriptionStatus.PAST_DUE, graceCutoff)
+            userSubscriptionRepository.findExpirableIds(SubscriptionStatus.PAST_DUE, graceCutoff) +
+            userSubscriptionRepository.findExpirableIds(SubscriptionStatus.GRANTED, now)
 
         expirableIds.forEach { subscriptionId ->
             try {

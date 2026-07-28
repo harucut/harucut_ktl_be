@@ -54,6 +54,11 @@ class UserSubscription(
     var billingKey: BillingKey? = null
         protected set
 
+    // 현 주기 후 활성화 대기 중인 무료 grant 쿠폰(UserCoupon) id. FK 없음(배치 조회 전용).
+    @Column(name = "reserved_grant_coupon_id")
+    var reservedGrantCouponId: Long? = null
+        protected set
+
     @Version
     @Column(name = "version", nullable = false)
     var version: Long = 0
@@ -102,6 +107,25 @@ class UserSubscription(
         this.currentPeriodEnd = null
         this.autoRenew = false
         this.billingKey = null
+    }
+
+    // 무료 쿠폰(coupon) 사용으로 grant 세그먼트 개시 — 카드/자동갱신 없이 tier 접근만 부여
+    fun activateGrant(tier: PlanTier, start: LocalDateTime, end: LocalDateTime) {
+        this.planTier = tier
+        this.status = SubscriptionStatus.GRANTED
+        this.currentPeriodStart = start
+        this.currentPeriodEnd = end
+        this.autoRenew = false
+    }
+
+    // 현 주기 후 활성화할 무료 grant 쿠폰 예약
+    fun reserveGrant(userCouponId: Long) {
+        this.reservedGrantCouponId = userCouponId
+    }
+
+    // 예약된 grant 쿠폰 해제
+    fun clearReservedGrant() {
+        this.reservedGrantCouponId = null
     }
 
     // 정책 적용에 사용할 실질 요금제. 유료 구독의 결제 주기가 지났는데
