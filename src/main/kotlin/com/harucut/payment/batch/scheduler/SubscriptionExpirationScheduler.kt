@@ -34,7 +34,7 @@ class SubscriptionExpirationScheduler(
         expirableIds.forEach { subscriptionId ->
             try {
                 log.info("subscriptionId={} 구독 만료(BASIC 강등) 처리 시작", subscriptionId)
-                subscriptionExpirationBatchService.expireInNewTransaction(subscriptionId)
+                subscriptionExpirationBatchService.expireInNewTransaction(subscriptionId, now)
             } catch (e: Exception) {
                 log.warn("[구독 만료 처리 예외] subscriptionId={}", subscriptionId, e)
             }

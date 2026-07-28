@@ -52,10 +52,12 @@ class UserCouponTest {
         @DisplayName("RESERVED 상태를 REDEEMED로 전환한다")
         fun success() {
             val uc = UserCoupon.reserved(coupon(), userId = 1L, now = LocalDateTime.now())
+            val reservedAt = uc.redeemedAt
 
-            uc.markRedeemed(LocalDateTime.now())
+            uc.markRedeemed()
 
             assertThat(uc.status).isEqualTo(UserCouponStatus.REDEEMED)
+            assertThat(uc.redeemedAt).isEqualTo(reservedAt)
         }
     }
 }

@@ -55,7 +55,7 @@ class UserCoupon(
         protected set
 
     // 예약된 grant를 개시 처리 (RESERVED -> REDEEMED)
-    fun markRedeemed(now: LocalDateTime) {
+    fun markRedeemed() {
         this.status = UserCouponStatus.REDEEMED
     }
 

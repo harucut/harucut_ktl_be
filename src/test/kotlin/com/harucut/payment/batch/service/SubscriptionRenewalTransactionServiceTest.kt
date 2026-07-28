@@ -1,5 +1,6 @@
 package com.harucut.payment.batch.service
 
+import com.harucut.coupon.service.GrantActivationService
 import com.harucut.payment.entity.BillingKey
 import com.harucut.payment.entity.Payment
 import com.harucut.payment.entity.PaymentOrder
@@ -12,7 +13,9 @@ import com.harucut.subscription.repository.UserSubscriptionRepository
 import com.harucut.user.config.PlanPricingProperties
 import com.harucut.user.entity.User
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -29,11 +32,12 @@ class SubscriptionRenewalTransactionServiceTest {
     private val paymentOrderRepository = mockk<PaymentOrderRepository>()
     private val paymentRepository = mockk<PaymentRepository>()
     private val planPricingProperties = PlanPricingProperties()
+    private val grantActivationService = mockk<GrantActivationService>()
     private val fixedClock: Clock = Clock.fixed(Instant.parse("2026-06-19T00:00:00Z"), ZoneOffset.UTC)
     private val now = java.time.LocalDateTime.now(fixedClock)
 
     private val service = SubscriptionRenewalTransactionService(
-        userSubscriptionRepository, paymentOrderRepository, paymentRepository, planPricingProperties
+        userSubscriptionRepository, paymentOrderRepository, paymentRepository, planPricingProperties, grantActivationService
     )
 
     private fun user(): User = mockk(relaxed = true) { every { publicId } returns "pub-1" }
@@ -43,6 +47,7 @@ class SubscriptionRenewalTransactionServiceTest {
         every { this@mockk.billingKey } returns billingKey
         every { planTier } returns PlanTier.PLUS
         every { user } returns user()
+        every { reservedGrantCouponId } returns null
     }
 
     @Nested
@@ -56,6 +61,21 @@ class SubscriptionRenewalTransactionServiceTest {
             val result = service.prepareRenewalOrderInNewTransaction(1L, now)
 
             assertThat(result).isEqualTo(SubscriptionRenewalTransactionService.RenewalPreparation.NotFound)
+            verify(exactly = 0) { paymentOrderRepository.save(any()) }
+        }
+
+        @Test
+        @DisplayName("예약된 무료 grant가 있으면 청구 대신 grant를 활성화하고 GrantActivated를 반환한다")
+        fun reservedGrant() {
+            val sub = subscription()
+            every { sub.reservedGrantCouponId } returns 10L
+            every { userSubscriptionRepository.findById(1L) } returns Optional.of(sub)
+            every { grantActivationService.activate(sub, now) } just runs
+
+            val result = service.prepareRenewalOrderInNewTransaction(1L, now)
+
+            assertThat(result).isEqualTo(SubscriptionRenewalTransactionService.RenewalPreparation.GrantActivated)
+            verify { grantActivationService.activate(sub, now) }
             verify(exactly = 0) { paymentOrderRepository.save(any()) }
         }
 

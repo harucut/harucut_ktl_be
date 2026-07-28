@@ -12,6 +12,9 @@ interface UserCouponRepository : JpaRepository<UserCoupon, Long> {
 
     fun existsByUserIdAndCouponId(userId: Long, couponId: Long): Boolean
 
+    // redeem 시 사용 상한 체크
+    fun countByCouponId(couponId: Long): Long
+
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM UserCoupon uc WHERE uc.userId = :userId")
     fun deleteByUserId(@Param("userId") userId: Long)

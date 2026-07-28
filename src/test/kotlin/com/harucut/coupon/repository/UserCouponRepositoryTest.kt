@@ -48,6 +48,19 @@ class UserCouponRepositoryTest {
     }
 
     @Test
+    @DisplayName("countByCouponId는 해당 쿠폰의 사용 수를 반환한다")
+    fun countByCouponId() {
+        val c1 = coupon()
+        val c2 = coupon("OTHER-CODE")
+        userCouponRepository.save(UserCoupon.redeemed(c1, userId = 1L, now = LocalDateTime.now()))
+        userCouponRepository.save(UserCoupon.redeemed(c1, userId = 2L, now = LocalDateTime.now()))
+        userCouponRepository.save(UserCoupon.redeemed(c2, userId = 1L, now = LocalDateTime.now()))
+
+        assertThat(userCouponRepository.countByCouponId(c1.id!!)).isEqualTo(2L)
+        assertThat(userCouponRepository.countByCouponId(c2.id!!)).isEqualTo(1L)
+    }
+
+    @Test
     @DisplayName("countGroupedByCouponId는 쿠폰별 사용 수를 GROUP BY로 집계한다")
     fun countGroupedByCouponId() {
         val c1 = coupon()
