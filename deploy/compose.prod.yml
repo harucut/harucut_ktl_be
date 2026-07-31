@@ -1,3 +1,6 @@
+# 프로젝트명 고정 (compose 파일이 deploy/ 하위라 기본값이 폴더명 'deploy'가 되는 것을 방지)
+name: harucut_be
+
 services:
   mysql:
     image: mysql:8.0
@@ -28,9 +31,8 @@ services:
     restart: unless-stopped
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # 레지스트리(GHCR)에서 pull. 빌드는 CI에서 수행하고 IMAGE_TAG(커밋 SHA 등)로 버전 지정.
+    image: ${APP_IMAGE:-ghcr.io/harucut/harucut_ktl_be}:${IMAGE_TAG:-latest}
     ports:
       - "8080:8080"
     environment:
@@ -38,7 +40,7 @@ services:
       DB_HOST: mysql
       REDIS_HOST: redis
     env_file:
-      - .env.prod
+      - env/.env.prod
     depends_on:
       mysql:
         condition: service_healthy
