@@ -50,8 +50,6 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
   # ── 2) EC2 에 SSH 접속 → 새 이미지 pull & 재기동 ─────────────────────
   deploy:
