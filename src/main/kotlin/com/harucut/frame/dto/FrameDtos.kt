@@ -1,5 +1,7 @@
 package com.harucut.frame.dto
 
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.harucut.frame.attributes.BackgroundAttributes
 import com.harucut.frame.enums.ComponentType
 import com.harucut.frame.enums.FrameType
@@ -59,7 +61,11 @@ data class FrameCreateRequest(
         @Schema(description = "높이", example = "480.0") val height: Double? = null,
         @Schema(description = "스케일", example = "1.0") val scale: Double? = null,
         @Schema(description = "회전 각도", example = "0.0") val rotation: Double = 0.0,
-        @Schema(description = "레이어 순서", example = "1") val zIndex: Int = 0,
+        // 과거 Swagger에 소문자 zindex로 노출됐던 이력 때문에 프론트가 아직 zindex도 보내고 있어 하위 호환으로 함께 받는다.
+        // @get:JsonProperty로 Swagger 스키마/직렬화 표기를 zIndex로 통일한다(응답 ComponentResponse.zIndex와 동일 처리).
+        @get:JsonProperty("zIndex")
+        @JsonAlias("zindex")
+        @Schema(description = "레이어 순서(과거 소문자 zindex로도 전송 시 하위호환으로 인식됨)", example = "1") val zIndex: Int = 0,
         @Schema(description = "스타일 JSON 맵") val styleJson: Map<String, Any>? = null
     )
 }
@@ -71,8 +77,11 @@ data class FrameResponse(
     @Schema(description = "프레임 설명", example = "벚꽃 배경의 여행 프레임") val description: String?,
     @Schema(description = "프레임 소스(프리뷰 URL)", example = "https://.../frame-1.png") val source: String?,
     @Schema(description = "프레임 타입", example = "CLASSIC") val frameType: FrameType,
+    // frameType에 따라 고정된 캔버스 크기(DB 저장값이 아닌 FrameType.layout에서 파생). apps/web/constants/frameLayouts.ts 참고.
+    @Schema(description = "캔버스 너비(px), frameType에 따라 고정", example = "2000") val canvasWidth: Int,
+    @Schema(description = "캔버스 높이(px), frameType에 따라 고정", example = "6000") val canvasHeight: Int,
     @Schema(description = "배경 속성") val background: BackgroundAttributes,
-    @Schema(description = "컴포넌트 목록") val components: List<ComponentResponse>,
+    @Schema(description = "컴포넌트 목록(zIndex 오름차순 정렬)") val components: List<ComponentResponse>,
     @Schema(description = "기본 제공(시스템) 프레임 여부", example = "false") val isSystem: Boolean
 ) {
     @Schema(description = "프레임 컴포넌트 응답 DTO")
@@ -85,7 +94,10 @@ data class FrameResponse(
         @Schema(description = "Y 좌표", example = "220.0") val y: Double,
         @Schema(description = "너비", example = "360.0") val width: Double,
         @Schema(description = "높이", example = "480.0") val height: Double,
+        @Schema(description = "스케일(null이면 1.0으로 대체됨)", example = "1.0") val scale: Double,
         @Schema(description = "회전 각도", example = "0.0") val rotation: Double,
+        // Kotlin getter 이름 규칙("getZIndex" → "zindex")으로 인해 직렬화 시 소문자화되는 문제를 막기 위해 명시.
+        @get:JsonProperty("zIndex")
         @Schema(description = "레이어 순서", example = "1") val zIndex: Int,
         @Schema(description = "스타일 JSON 맵") val style: Map<String, Any>
     )

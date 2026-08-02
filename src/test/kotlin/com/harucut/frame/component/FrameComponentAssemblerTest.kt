@@ -97,6 +97,13 @@ class FrameComponentAssemblerTest {
     @Nested
     inner class ToFrameResponse {
 
+        private fun frameComponent(source: String, zIndex: Int, scale: Double? = null) = FrameComponent(
+            source = source,
+            type = ComponentType.PHOTO,
+            x = 0.0, y = 0.0, width = null, height = null, scale = scale,
+            rotation = 0.0, zIndex = zIndex, styleJson = null
+        )
+
         @Test
         @DisplayName("사용자 프레임을 응답 DTO로 변환하면 isSystem=false 이다")
         fun mapsUserFrame() {
@@ -118,6 +125,84 @@ class FrameComponentAssemblerTest {
 
             assertThat(result.title).isEqualTo("기본 프레임")
             assertThat(result.isSystem).isTrue()
+        }
+
+        @Test
+        @DisplayName("frameType에 맞는 canvasWidth/canvasHeight를 채운다")
+        fun fillsCanvasSize() {
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = assembler.toFrameResponse(userFrame())
+
+            assertThat(result.canvasWidth).isEqualTo(FrameType.CLASSIC.layout.canvasWidth)
+            assertThat(result.canvasHeight).isEqualTo(FrameType.CLASSIC.layout.canvasHeight)
+        }
+
+        @Test
+        @DisplayName("[회귀] 시스템 프레임도 frameType에 맞는 canvasWidth/canvasHeight를 채운다")
+        fun fillsCanvasSizeForSystemFrame() {
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+
+            val result = assembler.toFrameResponse(systemFrame())
+
+            assertThat(result.canvasWidth).isEqualTo(FrameType.CLASSIC.layout.canvasWidth)
+            assertThat(result.canvasHeight).isEqualTo(FrameType.CLASSIC.layout.canvasHeight)
+        }
+
+        @Test
+        @DisplayName("scale이 없으면 1.0으로 대체한다")
+        fun fallsBackScaleToOne() {
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            val frame = userFrame().apply { addComponent(frameComponent("a", zIndex = 0, scale = null)) }
+
+            val result = assembler.toFrameResponse(frame)
+
+            assertThat(result.components[0].scale).isEqualTo(1.0)
+        }
+
+        @Test
+        @DisplayName("scale이 있으면 그대로 내려준다")
+        fun keepsExplicitScale() {
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            val frame = userFrame().apply { addComponent(frameComponent("a", zIndex = 0, scale = 0.2)) }
+
+            val result = assembler.toFrameResponse(frame)
+
+            assertThat(result.components[0].scale).isEqualTo(0.2)
+        }
+
+        @Test
+        @DisplayName("components를 zIndex 오름차순으로 정렬한다")
+        fun sortsByZIndexAscending() {
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            val frame = userFrame().apply {
+                addComponent(frameComponent("c", zIndex = 2))
+                addComponent(frameComponent("a", zIndex = 0))
+                addComponent(frameComponent("b", zIndex = 1))
+            }
+
+            val result = assembler.toFrameResponse(frame)
+
+            assertThat(result.components).extracting("key").containsExactly("a", "b", "c")
+        }
+
+        @Test
+        @DisplayName("zIndex가 같으면 조회된 순서를 보존한다(안정 정렬)")
+        fun keepsInsertionOrderOnTie() {
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            val frame = userFrame().apply {
+                addComponent(frameComponent("first", zIndex = 0))
+                addComponent(frameComponent("second", zIndex = 0))
+                addComponent(frameComponent("third", zIndex = 0))
+            }
+
+            val result = assembler.toFrameResponse(frame)
+
+            assertThat(result.components).extracting("key").containsExactly("first", "second", "third")
         }
     }
 

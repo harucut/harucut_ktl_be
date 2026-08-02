@@ -71,6 +71,8 @@ class FrameControllerTest : SecurityBeansMockSupport() {
         description = "벚꽃",
         source = "https://preview",
         frameType = FrameType.CLASSIC,
+        canvasWidth = FrameType.CLASSIC.layout.canvasWidth,
+        canvasHeight = FrameType.CLASSIC.layout.canvasHeight,
         background = ColorBackgroundAttributes("#ffffff"),
         components = emptyList(),
         isSystem = false
