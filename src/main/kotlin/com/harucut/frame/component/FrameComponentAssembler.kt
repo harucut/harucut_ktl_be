@@ -40,24 +40,29 @@ class FrameComponentAssembler(
         components.filter { it.type == ComponentType.PHOTO }.map { it.source }
 
     fun toFrameResponse(frame: Frame): FrameResponse {
-        val componentResponses = frame.components.map { c ->
-            FrameResponse.ComponentResponse(
-                id = c.id,
-                type = c.type,
-                source = frameAssetManager.resolveSource(c.type, c.source),
-                key = c.source,
-                x = c.x, y = c.y,
-                width = c.width ?: 0.0, height = c.height ?: 0.0,
-                rotation = c.rotation, zIndex = c.zIndex,
-                style = frameStyleConverter.convertToMap(c.styleJson)
-            )
-        }
+        val componentResponses = frame.components
+            .sortedBy { it.zIndex } // zIndex 오름차순(동일 zIndex는 조회된 순서를 보존 - sortedBy는 안정 정렬)
+            .map { c ->
+                FrameResponse.ComponentResponse(
+                    id = c.id,
+                    type = c.type,
+                    source = frameAssetManager.resolveSource(c.type, c.source),
+                    key = c.source,
+                    x = c.x, y = c.y,
+                    width = c.width ?: 0.0, height = c.height ?: 0.0,
+                    scale = c.scale ?: 1.0,
+                    rotation = c.rotation, zIndex = c.zIndex,
+                    style = frameStyleConverter.convertToMap(c.styleJson)
+                )
+            }
         return FrameResponse(
             frameId = frame.id,
             title = frame.title,
             description = frame.description,
             source = frameAssetManager.resolveSource(BackgroundType.IMAGE, frame.previewKey),
             frameType = frame.frameType,
+            canvasWidth = frame.frameType.layout.canvasWidth,
+            canvasHeight = frame.frameType.layout.canvasHeight,
             background = resolveBackgroundUrl(frame.background),
             components = componentResponses,
             isSystem = frame.isSystem
