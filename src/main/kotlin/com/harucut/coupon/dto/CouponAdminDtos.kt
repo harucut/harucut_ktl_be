@@ -26,7 +26,7 @@ data class CreateCouponRequest(
     @Schema(description = "전체 사용 상한 (null=무제한)", example = "100", nullable = true)
     val maxRedemptions: Int? = null,
 
-    @Schema(description = "사용 마감 일시 (null=무기한)", example = "2026-12-31T23:59:59", nullable = true)
+    @Schema(description = "사용 마감 일시 (null=무기한)", example = "2026-12-31T23:59:59+09:00", nullable = true)
     val validUntil: LocalDateTime? = null
 )
 
@@ -42,7 +42,7 @@ data class CouponResponse(
     val grantTier: PlanTier,
     @Schema(description = "전체 사용 상한 (null=무제한)", example = "100", nullable = true)
     val maxRedemptions: Int?,
-    @Schema(description = "사용 마감 일시 (null=무기한)", example = "2026-12-31T23:59:59", nullable = true)
+    @Schema(description = "사용 마감 일시 (null=무기한)", example = "2026-12-31T23:59:59+09:00", nullable = true)
     val validUntil: LocalDateTime?,
     @Schema(description = "활성 여부", example = "true")
     val active: Boolean,

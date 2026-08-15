@@ -25,7 +25,7 @@ class Frame(
     val frameType: FrameType,
 
     @Convert(converter = BackgroundConverter::class)
-    @Column(columnDefinition = "json", nullable = false)
+    @Column(nullable = false, length = 4000)
     var background: BackgroundAttributes,
 
     // 시스템 프레임은 오너가 없다 (isSystem=true ⇔ user=null)

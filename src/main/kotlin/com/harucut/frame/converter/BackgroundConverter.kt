@@ -8,10 +8,12 @@ import com.harucut.exception.GlobalErrorCode
 import com.harucut.frame.attributes.BackgroundAttributes
 import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Converter
+import org.slf4j.LoggerFactory
 
 @Converter
 class BackgroundConverter : AttributeConverter<BackgroundAttributes, String> {
 
+    private val log = LoggerFactory.getLogger(javaClass)
     private val objectMapper: ObjectMapper = jacksonObjectMapper()
 
     // 엔티티 → DB: 배경 속성을 JSON 문자열로 직렬화
@@ -30,6 +32,7 @@ class BackgroundConverter : AttributeConverter<BackgroundAttributes, String> {
         return try {
             objectMapper.readValue(dbData)
         } catch (e: Exception) {
+            log.error("배경 JSON 역직렬화 실패: {}", dbData.take(200), e)
             throw BusinessException(GlobalErrorCode.JSON_PARSE_ERROR)
         }
     }

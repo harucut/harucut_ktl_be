@@ -83,9 +83,9 @@ class FrameControllerTest : SecurityBeansMockSupport() {
     inner class Create {
 
         @Test
-        @DisplayName("정상 생성 시 200을 반환한다")
+        @DisplayName("정상 생성 시 200과 생성된 frameId를 반환한다")
         fun success() {
-            every { frameService.createFrame(1L, any()) } just Runs
+            every { frameService.createFrame(1L, any()) } returns frameResponse()
 
             mockMvc.post("/api/auth/user/frame") {
                 with(authentication(authToken()))
@@ -93,6 +93,7 @@ class FrameControllerTest : SecurityBeansMockSupport() {
                 content = objectMapper.writeValueAsString(requestBody())
             }.andExpect {
                 status { isOk() }
+                jsonPath("$.data.frameId") { value(1) }
             }
 
             verify { frameService.createFrame(1L, any()) }
@@ -172,9 +173,9 @@ class FrameControllerTest : SecurityBeansMockSupport() {
     inner class Update {
 
         @Test
-        @DisplayName("정상 수정 시 200을 반환한다")
+        @DisplayName("정상 수정 시 200과 수정된 프레임을 반환한다")
         fun success() {
-            every { frameService.updateFrame(1L, 5L, any()) } just Runs
+            every { frameService.updateFrame(1L, 5L, any()) } returns frameResponse()
 
             mockMvc.put("/api/auth/user/frame/5") {
                 with(authentication(authToken()))
@@ -182,6 +183,7 @@ class FrameControllerTest : SecurityBeansMockSupport() {
                 content = objectMapper.writeValueAsString(requestBody())
             }.andExpect {
                 status { isOk() }
+                jsonPath("$.data.frameId") { value(1) }
             }
 
             verify { frameService.updateFrame(1L, 5L, any()) }

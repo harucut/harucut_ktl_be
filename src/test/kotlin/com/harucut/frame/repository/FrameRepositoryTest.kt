@@ -1,13 +1,17 @@
 package com.harucut.frame.repository
 
 import com.harucut.frame.attributes.ColorBackgroundAttributes
+import com.harucut.frame.attributes.ImageBackgroundAttributes
 import com.harucut.frame.entity.Frame
+import com.harucut.frame.entity.FrameComponent
+import com.harucut.frame.enums.ComponentType
 import com.harucut.frame.enums.FrameType
 import com.harucut.user.entity.User
 import com.harucut.user.enums.Provider
 import com.harucut.user.enums.UserRole
 import com.harucut.user.enums.UserStatus
 import com.harucut.user.repository.UserRepository
+import jakarta.persistence.EntityManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -24,6 +28,9 @@ class FrameRepositoryTest {
 
     @Autowired
     lateinit var frameRepository: FrameRepository
+
+    @Autowired
+    lateinit var em: EntityManager
 
     private fun user(email: String): User = userRepository.save(
         User(
@@ -70,5 +77,65 @@ class FrameRepositoryTest {
 
         val ownerFrames = frameRepository.findAllByUserOrderByCreatedAtDesc(owner)
         assertThat(ownerFrames).extracting("id").containsExactly(userFrame.id)
+    }
+
+    // JSON 컬럼(columnDefinition="json") + AttributeConverter 조합이 Hibernate 6에서 이중 인코딩되던
+    // 회귀 버그 검증 (GEN-091). save → flush → clear 로 영속성 컨텍스트를 비우고 실제 재조회 경로를 태운다.
+    @Test
+    @DisplayName("[회귀] COLOR 배경이 저장 후 재조회에서 원본 그대로 복원된다")
+    fun colorBackgroundSurvivesReload() {
+        val saved = frameRepository.save(
+            Frame.system(
+                title = "제목", description = "설명", previewKey = "preview.png",
+                frameType = FrameType.CLASSIC, background = ColorBackgroundAttributes("#ffffff")
+            )
+        )
+        em.flush()
+        em.clear()
+
+        val reloaded = frameRepository.findById(saved.id!!).get()
+
+        assertThat(reloaded.background).isEqualTo(ColorBackgroundAttributes("#ffffff"))
+    }
+
+    @Test
+    @DisplayName("[회귀] IMAGE 배경이 저장 후 재조회에서 원본 그대로 복원된다")
+    fun imageBackgroundSurvivesReload() {
+        val saved = frameRepository.save(
+            Frame.system(
+                title = "제목", description = "설명", previewKey = "preview.png",
+                frameType = FrameType.CLASSIC, background = ImageBackgroundAttributes("uploads/bg.png", 0.5)
+            )
+        )
+        em.flush()
+        em.clear()
+
+        val reloaded = frameRepository.findById(saved.id!!).get()
+
+        assertThat(reloaded.background).isEqualTo(ImageBackgroundAttributes("uploads/bg.png", 0.5))
+    }
+
+    @Test
+    @DisplayName("[회귀] 컴포넌트의 styleJson이 저장 후 재조회에서 원본 그대로 복원된다")
+    fun styleJsonSurvivesReload() {
+        val frame = Frame.system(
+            title = "제목", description = "설명", previewKey = "preview.png",
+            frameType = FrameType.CLASSIC, background = ColorBackgroundAttributes("#ffffff")
+        )
+        frame.addComponent(
+            FrameComponent(
+                source = "uploads/photo.png", type = ComponentType.PHOTO,
+                x = 0.0, y = 0.0, width = null, height = null, scale = null,
+                rotation = 0.0, zIndex = 0, styleJson = """{"color":"red","fontSize":14}"""
+            )
+        )
+        val saved = frameRepository.save(frame)
+        em.flush()
+        em.clear()
+
+        val reloaded = frameRepository.findById(saved.id!!).get()
+
+        assertThat(reloaded.components).hasSize(1)
+        assertThat(reloaded.components[0].styleJson).isEqualTo("""{"color":"red","fontSize":14}""")
     }
 }

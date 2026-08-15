@@ -36,9 +36,9 @@ class FrameController(
     fun createFrame(
         @RequestBody @Valid request: FrameCreateRequest,
         @Parameter(hidden = true) @AuthenticationPrincipal principal: CustomUserPrincipal
-    ): ResponseEntity<Response<Unit>> {
-        frameService.createFrame(principal.id!!, request)
-        return Response.ok().toResponseEntity()
+    ): ResponseEntity<Response<FrameResponse>> {
+        val response = frameService.createFrame(principal.id!!, request)
+        return Response.ok(response).toResponseEntity()
     }
 
     // 내 프레임 목록 조회
@@ -86,9 +86,9 @@ class FrameController(
         @Parameter(description = "프레임 ID", required = true) @PathVariable frameId: Long,
         @RequestBody @Valid request: FrameCreateRequest,
         @Parameter(hidden = true) @AuthenticationPrincipal principal: CustomUserPrincipal
-    ): ResponseEntity<Response<Unit>> {
-        frameService.updateFrame(principal.id!!, frameId, request)
-        return Response.ok().toResponseEntity()
+    ): ResponseEntity<Response<FrameResponse>> {
+        val response = frameService.updateFrame(principal.id!!, frameId, request)
+        return Response.ok(response).toResponseEntity()
     }
 
     // 프레임 삭제

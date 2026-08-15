@@ -128,6 +128,20 @@ class FrameComponentAssemblerTest {
         }
 
         @Test
+        @DisplayName("[회귀] IMAGE 배경 응답은 key(원본 키)와 url(서명 URL)을 분리해서 담는다")
+        fun separatesImageBackgroundKeyAndUrl() {
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, "uploads/bg.png") } returns "https://signed-url"
+            val frame = userFrame().apply { background = ImageBackgroundAttributes("uploads/bg.png", 0.5) }
+
+            val result = assembler.toFrameResponse(frame)
+
+            val background = result.background as ImageBackgroundAttributes
+            assertThat(background.key).isEqualTo("uploads/bg.png")
+            assertThat(background.url).isEqualTo("https://signed-url")
+        }
+
+        @Test
         @DisplayName("frameType에 맞는 canvasWidth/canvasHeight를 채운다")
         fun fillsCanvasSize() {
             every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"

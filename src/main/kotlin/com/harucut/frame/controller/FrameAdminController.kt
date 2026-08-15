@@ -39,9 +39,9 @@ class FrameAdminController(
         ApiResponse(responseCode = "403", description = "관리자 권한 없음")
     )
     @PostMapping
-    fun createFrame(@RequestBody @Valid request: FrameCreateRequest): ResponseEntity<Response<Unit>> {
-        frameAdminService.createSystemFrame(request)
-        return Response.ok().toResponseEntity()
+    fun createFrame(@RequestBody @Valid request: FrameCreateRequest): ResponseEntity<Response<FrameResponse>> {
+        val response = frameAdminService.createSystemFrame(request)
+        return Response.ok(response).toResponseEntity()
     }
 
     @Operation(summary = "시스템 프레임 수정", description = "시스템 프레임 ID로 메타데이터/컴포넌트를 수정합니다.")
@@ -56,9 +56,9 @@ class FrameAdminController(
     fun updateFrame(
         @Parameter(description = "프레임 ID", required = true) @PathVariable frameId: Long,
         @RequestBody @Valid request: FrameCreateRequest
-    ): ResponseEntity<Response<Unit>> {
-        frameAdminService.updateSystemFrame(frameId, request)
-        return Response.ok().toResponseEntity()
+    ): ResponseEntity<Response<FrameResponse>> {
+        val response = frameAdminService.updateSystemFrame(frameId, request)
+        return Response.ok(response).toResponseEntity()
     }
 
     @Operation(summary = "시스템 프레임 삭제", description = "시스템 프레임 ID로 프레임을 삭제합니다.")

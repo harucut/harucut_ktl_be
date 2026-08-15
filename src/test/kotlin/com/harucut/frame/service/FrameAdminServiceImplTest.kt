@@ -72,14 +72,16 @@ class FrameAdminServiceImplTest {
         fun success() {
             every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
             every { frameAssetManager.normalizeKey("uploads/system/preview.png") } returns "uploads/system/preview.png"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
             val saved = slot<Frame>()
             every { frameRepository.save(capture(saved)) } answers { saved.captured }
 
-            service.createSystemFrame(request())
+            val result = service.createSystemFrame(request())
 
             assertThat(saved.captured.user).isNull()
             assertThat(saved.captured.isSystem).isTrue()
             assertThat(saved.captured.title).isEqualTo("기본 프레임")
+            assertThat(result.title).isEqualTo("기본 프레임")
         }
     }
 
@@ -133,11 +135,14 @@ class FrameAdminServiceImplTest {
             every { frameAssetManager.normalizeKey("new-preview.png") } returns "new-preview.png"
             every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
             every { frameAssetManager.deleteFiles(any()) } just Runs
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            every { frameRepository.saveAndFlush(any()) } returns frame
 
-            service.updateSystemFrame(1L, request(title = "new", previewKey = "new-preview.png"))
+            val result = service.updateSystemFrame(1L, request(title = "new", previewKey = "new-preview.png"))
 
             assertThat(frame.title).isEqualTo("new")
             assertThat(frame.previewKey).isEqualTo("new-preview.png")
+            assertThat(result.title).isEqualTo("new")
             verify { frameAssetManager.deleteFiles(listOf("old-preview.png")) }
         }
     }

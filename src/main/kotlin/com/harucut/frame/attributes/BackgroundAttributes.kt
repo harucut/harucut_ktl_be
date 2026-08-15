@@ -1,5 +1,6 @@
 package com.harucut.frame.attributes
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.harucut.frame.enums.BackgroundType
@@ -26,7 +27,9 @@ data class ColorBackgroundAttributes(
 
 data class ImageBackgroundAttributes(
     val key: String,
-    val opacity: Double
+    val opacity: Double,
+    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    val url: String? = null
 ) : BackgroundAttributes() {
     override val type: BackgroundType = BackgroundType.IMAGE
 }

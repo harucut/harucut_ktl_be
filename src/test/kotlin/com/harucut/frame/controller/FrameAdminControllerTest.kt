@@ -82,9 +82,9 @@ class FrameAdminControllerTest : SecurityBeansMockSupport() {
     inner class CreateFrame {
 
         @Test
-        @DisplayName("관리자가 시스템 프레임을 생성하면 200을 반환한다")
+        @DisplayName("관리자가 시스템 프레임을 생성하면 200과 생성된 frameId를 반환한다")
         fun success() {
-            every { frameAdminService.createSystemFrame(any()) } just Runs
+            every { frameAdminService.createSystemFrame(any()) } returns frameResponse()
 
             mockMvc.post("/api/admin/frames") {
                 with(authentication(authToken("ROLE_ADMIN")))
@@ -92,6 +92,7 @@ class FrameAdminControllerTest : SecurityBeansMockSupport() {
                 content = objectMapper.writeValueAsString(requestBody())
             }.andExpect {
                 status { isOk() }
+                jsonPath("$.data.frameId") { value(1) }
             }
 
             verify { frameAdminService.createSystemFrame(any()) }
@@ -146,9 +147,9 @@ class FrameAdminControllerTest : SecurityBeansMockSupport() {
     inner class UpdateFrame {
 
         @Test
-        @DisplayName("관리자가 시스템 프레임을 수정하면 200을 반환한다")
+        @DisplayName("관리자가 시스템 프레임을 수정하면 200과 수정된 프레임을 반환한다")
         fun success() {
-            every { frameAdminService.updateSystemFrame(1L, any()) } just Runs
+            every { frameAdminService.updateSystemFrame(1L, any()) } returns frameResponse()
 
             mockMvc.patch("/api/admin/frames/1") {
                 with(authentication(authToken("ROLE_ADMIN")))
@@ -156,6 +157,7 @@ class FrameAdminControllerTest : SecurityBeansMockSupport() {
                 content = objectMapper.writeValueAsString(requestBody(title = "수정된 제목"))
             }.andExpect {
                 status { isOk() }
+                jsonPath("$.data.frameId") { value(1) }
             }
 
             verify { frameAdminService.updateSystemFrame(1L, any()) }

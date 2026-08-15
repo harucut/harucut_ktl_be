@@ -20,9 +20,9 @@ data class RedeemResultResponse(
     val applied: Boolean,
     @Schema(description = "부여 tier", example = "PRO")
     val grantTier: PlanTier,
-    @Schema(description = "무료 grant 개시(예정) 일시", example = "2026-07-28T10:00:00")
+    @Schema(description = "무료 grant 개시(예정) 일시", example = "2026-07-28T10:00:00+09:00")
     val startsAt: LocalDateTime,
-    @Schema(description = "무료 grant 종료(예정) 일시", example = "2026-08-28T10:00:00")
+    @Schema(description = "무료 grant 종료(예정) 일시", example = "2026-08-28T10:00:00+09:00")
     val endsAt: LocalDateTime
 )
 
@@ -36,7 +36,7 @@ data class MyCouponResponse(
     val grantTier: PlanTier,
     @Schema(description = "상태 (RESERVED/REDEEMED)", example = "REDEEMED")
     val status: UserCouponStatus,
-    @Schema(description = "코드 사용 시각", example = "2026-07-28T10:00:00")
+    @Schema(description = "코드 사용 시각", example = "2026-07-28T10:00:00+09:00")
     val redeemedAt: LocalDateTime
 ) {
     companion object {

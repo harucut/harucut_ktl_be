@@ -25,7 +25,7 @@ class FrameComponent(
     @Column(name = "z_index")
     val zIndex: Int,
 
-    @Column(name = "style_json", columnDefinition = "json")
+    @Column(name = "style_json", length = 4000)
     val styleJson: String?
 ) : BaseEntity() {
 

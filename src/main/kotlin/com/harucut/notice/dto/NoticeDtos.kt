@@ -46,7 +46,7 @@ data class NoticeResponse(
     val content: String,
     @Schema(description = "상단 고정 여부", example = "false")
     val pinned: Boolean,
-    @Schema(description = "게시 일시", example = "2026-07-22T10:00:00")
+    @Schema(description = "게시 일시", example = "2026-07-22T10:00:00+09:00")
     val publishedAt: LocalDateTime?
 ) {
     companion object {
@@ -74,7 +74,7 @@ data class NoticeAdminResponse(
     val pinned: Boolean,
     @Schema(description = "게시 여부", example = "false")
     val published: Boolean,
-    @Schema(description = "게시 일시", example = "2026-07-22T10:00:00")
+    @Schema(description = "게시 일시", example = "2026-07-22T10:00:00+09:00")
     val publishedAt: LocalDateTime?
 ) {
     companion object {

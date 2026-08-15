@@ -26,7 +26,7 @@ class FrameServiceImpl(
     private val frameComponentAssembler: FrameComponentAssembler
 ) : FrameService {
 
-    override fun createFrame(userId: Long, request: FrameCreateRequest) {
+    override fun createFrame(userId: Long, request: FrameCreateRequest): FrameResponse {
         val user = getUserById(userId)
         frameSubscriptionPolicy.assertFrameRetentionLimit(user, frameRepository.countByUser(user).toInt())
 
@@ -44,7 +44,8 @@ class FrameServiceImpl(
         )
         frameComponentAssembler.createComponents(request.components, resolvedKeyMap).forEach(frame::addComponent)
 
-        frameRepository.save(frame)
+        val saved = frameRepository.save(frame)
+        return frameComponentAssembler.toFrameResponse(saved)
     }
 
     @Transactional(readOnly = true)
@@ -88,7 +89,7 @@ class FrameServiceImpl(
         frameRepository.delete(frame)
     }
 
-    override fun updateFrame(userId: Long, frameId: Long, request: FrameCreateRequest) {
+    override fun updateFrame(userId: Long, frameId: Long, request: FrameCreateRequest): FrameResponse {
         val frame = findFrameById(frameId)
         validateOwner(frame, userId)
 
@@ -117,6 +118,11 @@ class FrameServiceImpl(
         val newPhotoKeys = frameComponentAssembler.extractPhotoKeys(newComponents).toSet()
         val garbageKeys = oldPhotoKeys.filterNot { it in newPhotoKeys }
         frameAssetManager.deleteFiles(garbageKeys)
+
+        // clearComponents() + addComponent()로 새로 추가된 컴포넌트는 아직 INSERT 전이라 id가 null이다.
+        // flush로 id를 채운 뒤 응답을 조립해야 GET/생성 응답과 계약(components[].id)이 맞는다.
+        frameRepository.saveAndFlush(frame)
+        return frameComponentAssembler.toFrameResponse(frame)
     }
 
     // ── helpers ────────────────────────────
