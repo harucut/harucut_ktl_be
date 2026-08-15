@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
@@ -21,10 +20,9 @@ import java.time.Duration
 @EnableCaching
 class RedisConfig {
 
-    @Bean
-    fun redisConnectionFactory(): RedisConnectionFactory {
-        return LettuceConnectionFactory()
-    }
+    // RedisConnectionFactory 는 Spring Boot 자동설정(spring.data.redis.*)에 맡긴다.
+    // 직접 LettuceConnectionFactory() 를 빈으로 등록하면 host/port/password 설정이 무시되고
+    // 항상 localhost:6379 로 접속한다.
 
     @Bean
     fun stringRedisTemplate(connectionFactory: RedisConnectionFactory): StringRedisTemplate {
