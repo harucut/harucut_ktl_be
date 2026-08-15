@@ -88,10 +88,7 @@ class FrameComponentAssembler(
     private fun resolveBackgroundUrl(bg: BackgroundAttributes): BackgroundAttributes =
         when (bg) {
             is ImageBackgroundAttributes ->
-                ImageBackgroundAttributes(
-                    frameAssetManager.resolveSource(BackgroundType.IMAGE, bg.key) ?: bg.key,
-                    bg.opacity
-                )
+                bg.copy(url = frameAssetManager.resolveSource(BackgroundType.IMAGE, bg.key) ?: bg.key)
 
             else -> bg
         }

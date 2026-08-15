@@ -18,6 +18,9 @@ class FrameAssetManager(
         if (components.isNullOrEmpty()) return emptyMap()
         val mapping = LinkedHashMap<String, String>()
         for (component in components) {
+            // S3 관리 키 정규화는 PHOTO만 대상 (resolveSource(type, ...)의 presign 대상과 대칭).
+            // STICKER는 프론트 정적 자산 경로, TEXT는 source가 본문 텍스트라 건드리면 안 된다.
+            if (component.type != ComponentType.PHOTO) continue
             val normalized = normalizeManagedKey(component.source) ?: continue
             if (normalized.isBlank()) continue
             if (component.source != normalized) mapping[component.source] = normalized

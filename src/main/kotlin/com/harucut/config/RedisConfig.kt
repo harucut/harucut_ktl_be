@@ -1,6 +1,7 @@
 package com.harucut.config
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import org.springframework.cache.annotation.EnableCaching
@@ -16,6 +17,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
 import java.time.Duration
+import java.time.LocalDateTime
 
 @Configuration
 @EnableCaching
@@ -25,6 +27,12 @@ class RedisConfig {
     fun redisConnectionFactory(): RedisConnectionFactory {
         return LettuceConnectionFactory()
     }
+
+    // HTTP 응답과 동일하게 LocalDateTime을 UTC로 간주해 캐시에도 일관되게 직렬화한다(JacksonConfig 참고).
+    private fun utcLocalDateTimeModule(): SimpleModule =
+        SimpleModule()
+            .addSerializer(LocalDateTime::class.java, UtcLocalDateTimeSerializer())
+            .addDeserializer(LocalDateTime::class.java, UtcLocalDateTimeDeserializer())
 
     @Bean
     fun stringRedisTemplate(connectionFactory: RedisConnectionFactory): StringRedisTemplate {
@@ -41,6 +49,7 @@ class RedisConfig {
         val objectMapper = ObjectMapper()
             .registerKotlinModule()
             .registerModule(JavaTimeModule())
+            .registerModule(utcLocalDateTimeModule())
 
         val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
 
@@ -57,6 +66,7 @@ class RedisConfig {
         val objectMapper = ObjectMapper()
             .registerKotlinModule()
             .registerModule(JavaTimeModule())
+            .registerModule(utcLocalDateTimeModule())
 
         val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
 

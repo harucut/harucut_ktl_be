@@ -21,7 +21,7 @@ class FrameAdminServiceImpl(
     private val frameComponentAssembler: FrameComponentAssembler
 ) : FrameAdminService {
 
-    override fun createSystemFrame(request: FrameCreateRequest) {
+    override fun createSystemFrame(request: FrameCreateRequest): FrameResponse {
         val resolvedKeyMap = frameAssetManager.normalizeComponentKeys(request.components)
         val resolvedBackground = frameComponentAssembler.normalizeBackground(request.background)
         val resolvedPreviewKey = frameAssetManager.normalizeKey(request.previewKey) ?: request.previewKey
@@ -35,10 +35,11 @@ class FrameAdminServiceImpl(
         )
         frameComponentAssembler.createComponents(request.components, resolvedKeyMap).forEach(frame::addComponent)
 
-        frameRepository.save(frame)
+        val saved = frameRepository.save(frame)
+        return frameComponentAssembler.toFrameResponse(saved)
     }
 
-    override fun updateSystemFrame(frameId: Long, request: FrameCreateRequest) {
+    override fun updateSystemFrame(frameId: Long, request: FrameCreateRequest): FrameResponse {
         val frame = findSystemFrame(frameId)
 
         val oldBackgroundKey = frameComponentAssembler.extractBackgroundKey(frame.background)
@@ -66,6 +67,11 @@ class FrameAdminServiceImpl(
         val newPhotoKeys = frameComponentAssembler.extractPhotoKeys(newComponents).toSet()
         val garbageKeys = oldPhotoKeys.filterNot { it in newPhotoKeys }
         frameAssetManager.deleteFiles(garbageKeys)
+
+        // clearComponents() + addComponent()로 새로 추가된 컴포넌트는 아직 INSERT 전이라 id가 null이다.
+        // flush로 id를 채운 뒤 응답을 조립해야 GET/생성 응답과 계약(components[].id)이 맞는다.
+        frameRepository.saveAndFlush(frame)
+        return frameComponentAssembler.toFrameResponse(frame)
     }
 
     override fun deleteSystemFrame(frameId: Long) {

@@ -108,6 +108,8 @@ class FrameServiceTest {
             every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
             every { frameAssetManager.normalizeKey("uploads/users/pub/preview.png") } returns "uploads/users/pub/preview.png"
             every { frameStyleConverter.convertToJson(any()) } returns "{}"
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
             val saved = slot<Frame>()
             every { frameRepository.save(capture(saved)) } answers { saved.captured }
 
@@ -120,11 +122,12 @@ class FrameServiceTest {
                 components = listOf(componentRequest("uploads/users/pub/components/a.png"))
             )
 
-            service.createFrame(1L, request)
+            val result = service.createFrame(1L, request)
 
             assertThat(saved.captured.previewKey).isEqualTo("uploads/users/pub/preview.png")
             assertThat(saved.captured.title).isEqualTo("봄 여행 4컷")
             assertThat(saved.captured.components).hasSize(1)
+            assertThat(result.title).isEqualTo("봄 여행 4컷")
             verify { frameSubscriptionPolicy.assertFrameRetentionLimit(user, 0) }
         }
 
@@ -468,6 +471,9 @@ class FrameServiceTest {
             every { frameAssetManager.normalizeComponentKeys(any()) } returns emptyMap()
             every { frameStyleConverter.convertToJson(any()) } returns "{}"
             every { frameAssetManager.deleteFiles(any()) } just Runs
+            every { frameAssetManager.resolveSource(BackgroundType.IMAGE, any<String>()) } returns "preview-url"
+            every { frameAssetManager.resolveSource(ComponentType.PHOTO, any<String>()) } returns "resolved"
+            every { frameRepository.saveAndFlush(any()) } returns target
 
             val request = FrameCreateRequest(
                 title = "new",
@@ -478,12 +484,13 @@ class FrameServiceTest {
                 components = listOf(componentRequest("uploads/users/pub/components/new.png"))
             )
 
-            service.updateFrame(1L, 10L, request)
+            val result = service.updateFrame(1L, 10L, request)
 
             assertThat(target.title).isEqualTo("new")
             assertThat(target.previewKey).isEqualTo("uploads/users/pub/new-preview.png")
             assertThat(target.background).isInstanceOf(ColorBackgroundAttributes::class.java)
             assertThat(target.components).hasSize(1)
+            assertThat(result.title).isEqualTo("new")
 
             verify { frameAssetManager.deleteFiles(listOf("uploads/users/pub/old-bg.png")) }
             verify { frameAssetManager.deleteFiles(listOf("uploads/users/pub/old-preview.png")) }

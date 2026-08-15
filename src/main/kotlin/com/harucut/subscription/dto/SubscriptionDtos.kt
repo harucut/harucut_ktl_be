@@ -10,9 +10,9 @@ data class SubscriptionResponse(
     val planTier: String,
     @Schema(description = "구독 상태", example = "ACTIVE")
     val status: String,
-    @Schema(description = "현재 결제 주기 시작", example = "2026-07-21T00:00:00")
+    @Schema(description = "현재 결제 주기 시작", example = "2026-07-21T00:00:00Z")
     val currentPeriodStart: LocalDateTime?,
-    @Schema(description = "현재 결제 주기 만료", example = "2026-08-21T00:00:00")
+    @Schema(description = "현재 결제 주기 만료", example = "2026-08-21T00:00:00Z")
     val currentPeriodEnd: LocalDateTime?,
     @Schema(description = "자동갱신 여부", example = "true")
     val autoRenew: Boolean

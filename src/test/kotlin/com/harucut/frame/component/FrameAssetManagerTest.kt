@@ -19,8 +19,8 @@ class FrameAssetManagerTest {
     private val fileStorageService = mockk<FileStorageService>()
     private val assetManager = FrameAssetManager(fileStorageService)
 
-    private fun component(source: String) =
-        FrameCreateRequest.ComponentRequest(type = ComponentType.PHOTO, source = source)
+    private fun component(source: String, type: ComponentType = ComponentType.PHOTO) =
+        FrameCreateRequest.ComponentRequest(type = type, source = source)
 
     @Nested
     inner class NormalizeComponentKeys {
@@ -51,6 +51,37 @@ class FrameAssetManagerTest {
         fun emptyComponents() {
             assertThat(assetManager.normalizeComponentKeys(emptyList())).isEmpty()
             assertThat(assetManager.normalizeComponentKeys(null)).isEmpty()
+        }
+
+        @Test
+        @DisplayName("[회귀] TEXT 컴포넌트의 source(본문 텍스트)는 정규화 대상에서 제외한다")
+        fun excludesText() {
+            val result = assetManager.normalizeComponentKeys(
+                listOf(component("/2026 여름", type = ComponentType.TEXT))
+            )
+
+            assertThat(result).isEmpty()
+        }
+
+        @Test
+        @DisplayName("[회귀] STICKER의 로컬 정적 경로는 정규화 대상에서 제외한다")
+        fun excludesSticker() {
+            val result = assetManager.normalizeComponentKeys(
+                listOf(component("/stickers/sticker-001.png", type = ComponentType.STICKER))
+            )
+
+            assertThat(result).isEmpty()
+        }
+
+        @Test
+        @DisplayName("PHOTO는 여전히 정규화 대상이다")
+        fun stillNormalizesPhoto() {
+            val result = assetManager.normalizeComponentKeys(
+                listOf(component("/uploads/users/pub/components/a.png", type = ComponentType.PHOTO))
+            )
+
+            assertThat(result["/uploads/users/pub/components/a.png"])
+                .isEqualTo("uploads/users/pub/components/a.png")
         }
     }
 

@@ -119,9 +119,9 @@ class NoticeAdminController(
     )
     @GetMapping
     fun getAllNotices(
-        @Parameter(description = "페이지 번호(0부터 시작)", schema = Schema(defaultValue = "0", minimum = "0"))
+        @Parameter(description = "페이지 번호(0부터 시작)", schema = Schema(type = "integer", defaultValue = "0", minimum = "0"))
         @RequestParam(value = "page", defaultValue = "0") page: Int,
-        @Parameter(description = "페이지 크기. 기본값은 10입니다.", schema = Schema(defaultValue = "10", minimum = "1"))
+        @Parameter(description = "페이지 크기. 기본값은 10입니다.", schema = Schema(type = "integer", defaultValue = "10", minimum = "1"))
         @RequestParam(value = "size", defaultValue = "10") size: Int
     ): ResponseEntity<Response<PageResponse<NoticeAdminResponse>>> {
         return Response.ok(noticeAdminService.listAllNotices(page, size)).toResponseEntity()
