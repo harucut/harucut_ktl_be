@@ -14,23 +14,26 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 
-// 서버는 항상 UTC로 뜨는 것을 전제로 LocalDateTime(createdAt/updatedAt 등)을 저장한다(Dockerfile ENV TZ=UTC 참고).
-// 오프셋 없이 그대로 내려주면 클라이언트가 자기 로컬 타임존으로 오해석해 시간이 밀리므로,
-// 직렬화 시에는 "이 값은 UTC다"를 명시하기 위해 Instant로 변환해 'Z' 접미사를 붙인다.
-class UtcLocalDateTimeSerializer : JsonSerializer<LocalDateTime>() {
+// 서버 내부(DB/JVM/배치 스케줄)는 항상 UTC로 LocalDateTime(createdAt/updatedAt 등)을 다룬다
+// (컨테이너는 UTC로 고정 — Dockerfile ENV TZ=UTC 참고. 구독 갱신/만료 등 배치 트리거 시각에 영향 없음).
+// API 응답에서는 프론트가 그대로 표시할 수 있도록 KST(+09:00)로 변환해 오프셋과 함께 내려준다.
+val KST: ZoneOffset = ZoneOffset.of("+09:00")
+
+class KstLocalDateTimeSerializer : JsonSerializer<LocalDateTime>() {
     override fun serialize(value: LocalDateTime, gen: JsonGenerator, serializers: SerializerProvider) {
-        gen.writeString(value.toInstant(ZoneOffset.UTC).toString())
+        gen.writeString(value.atOffset(ZoneOffset.UTC).withOffsetSameInstant(KST).toString())
     }
 }
 
-class UtcLocalDateTimeDeserializer : JsonDeserializer<LocalDateTime>() {
+// 오프셋이 있는 입력(Z, +09:00 등)은 그 오프셋 기준으로 파싱해 내부 저장 기준인 UTC wall-clock으로 정규화하고,
+// 오프셋 없는 레거시 입력은 기존 동작대로 UTC wall-clock으로 그대로 해석한다.
+class KstLocalDateTimeDeserializer : JsonDeserializer<LocalDateTime>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): LocalDateTime {
         val value = p.valueAsString
             ?: return ctxt.reportInputMismatch(LocalDateTime::class.java, "LocalDateTime 값이 없습니다.")
         return try {
             Instant.parse(value).atZone(ZoneOffset.UTC).toLocalDateTime()
         } catch (e: DateTimeParseException) {
-            // 오프셋 없는 레거시 포맷(예: "2026-12-31T23:59:59")은 UTC wall-clock으로 그대로 해석한다.
             LocalDateTime.parse(value)
         }
     }
@@ -40,9 +43,9 @@ class UtcLocalDateTimeDeserializer : JsonDeserializer<LocalDateTime>() {
 class JacksonConfig {
 
     @Bean
-    fun utcLocalDateTimeJacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer =
+    fun kstLocalDateTimeJacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer =
         Jackson2ObjectMapperBuilderCustomizer { builder ->
-            builder.serializerByType(LocalDateTime::class.java, UtcLocalDateTimeSerializer())
-            builder.deserializerByType(LocalDateTime::class.java, UtcLocalDateTimeDeserializer())
+            builder.serializerByType(LocalDateTime::class.java, KstLocalDateTimeSerializer())
+            builder.deserializerByType(LocalDateTime::class.java, KstLocalDateTimeDeserializer())
         }
 }

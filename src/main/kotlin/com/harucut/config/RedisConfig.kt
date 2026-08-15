@@ -28,11 +28,11 @@ class RedisConfig {
         return LettuceConnectionFactory()
     }
 
-    // HTTP 응답과 동일하게 LocalDateTime을 UTC로 간주해 캐시에도 일관되게 직렬화한다(JacksonConfig 참고).
-    private fun utcLocalDateTimeModule(): SimpleModule =
+    // HTTP 응답과 동일한 (역)직렬화 규칙을 캐시에도 적용한다(JacksonConfig 참고).
+    private fun kstLocalDateTimeModule(): SimpleModule =
         SimpleModule()
-            .addSerializer(LocalDateTime::class.java, UtcLocalDateTimeSerializer())
-            .addDeserializer(LocalDateTime::class.java, UtcLocalDateTimeDeserializer())
+            .addSerializer(LocalDateTime::class.java, KstLocalDateTimeSerializer())
+            .addDeserializer(LocalDateTime::class.java, KstLocalDateTimeDeserializer())
 
     @Bean
     fun stringRedisTemplate(connectionFactory: RedisConnectionFactory): StringRedisTemplate {
@@ -49,7 +49,7 @@ class RedisConfig {
         val objectMapper = ObjectMapper()
             .registerKotlinModule()
             .registerModule(JavaTimeModule())
-            .registerModule(utcLocalDateTimeModule())
+            .registerModule(kstLocalDateTimeModule())
 
         val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
 
@@ -66,7 +66,7 @@ class RedisConfig {
         val objectMapper = ObjectMapper()
             .registerKotlinModule()
             .registerModule(JavaTimeModule())
-            .registerModule(utcLocalDateTimeModule())
+            .registerModule(kstLocalDateTimeModule())
 
         val jsonSerializer = GenericJackson2JsonRedisSerializer(objectMapper)
 

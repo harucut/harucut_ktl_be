@@ -26,13 +26,13 @@ class JacksonConfigIntegrationTest {
     inner class Serialization {
 
         @Test
-        @DisplayName("LocalDateTime을 직렬화하면 Z 접미사가 붙는다")
-        fun serializesWithUtcSuffix() {
+        @DisplayName("LocalDateTime을 직렬화하면 KST(+09:00) 오프셋이 붙는다")
+        fun serializesWithKstOffset() {
             val value = LocalDateTime.of(2026, 8, 14, 10, 54, 45)
 
             val json = objectMapper.writeValueAsString(value)
 
-            assertThat(json).isEqualTo("\"2026-08-14T10:54:45Z\"")
+            assertThat(json).isEqualTo("\"2026-08-14T19:54:45+09:00\"")
         }
     }
 
